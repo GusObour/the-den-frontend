@@ -1,0 +1,47 @@
+.about-container {
+    padding: 3rem 0;
+    background-color: var(--light-blue);
+    color: var(--black);
+}
+
+.about-container.dark {
+    background-color: var(--black);
+    color: var(--light-blue);
+}
+
+.profileCard {
+    display: flex;
+    background-color: var(--white);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
+    align-items: center;
+}
+
+.profileCard img {
+    height: auto;
+    width: 20rem;
+    border-radius: 10%;
+    margin-bottom: 1rem;
+}
+
+.profileCard p {
+    font-size: 1rem;
+    color: var(--gray);
+}
+
+@media (prefers-color-scheme: dark) {
+    .about-container {
+        background-color: var(--black);
+        color: var(--light-blue);
+    }
+
+    .profileCard {
+        background-color: var(--gray-blue);
+    }
+
+    .profileCard p {
+        color: var(--light-blue);
+    }
+}

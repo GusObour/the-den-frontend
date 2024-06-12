@@ -1,0 +1,28 @@
+:root {
+  --black: #030509;
+  --dark-blue: #375C95;
+  --medium-blue: #71A2DF;
+  --gray-blue: #4A5C75;
+  --light-blue: #AACFF6;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--light-blue);
+  color: var(--black);
+}
+
+body.dark {
+  background-color: var(--black);
+  color: var(--light-blue);
+}
+
+.app {
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}

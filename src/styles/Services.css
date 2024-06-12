@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+.service-card {
+    transition: transform 0.2s;
+}
+
+.service-card:hover {
+    transform: translateY(-5px);
+}
+
+input, select {
+    transition: background-color 0.3s, color 0.3s;
+}
+
+input::placeholder {
+    color: var(--dark-gray);
+}
+
+option {
+    background-color: var(--light-gray);
+    color: var(--black);
+}
