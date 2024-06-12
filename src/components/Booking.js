@@ -43,8 +43,8 @@ const Booking = () => {
 
     const handleDateSelect = async (date) => {
         setSelectedDate(date);
-        if (selectedBarber && selectedBarber.id) {
-            const fetchedTimeSlots = await BookingService.fetchAvailability(selectedBarber.id, date);
+        if (selectedBarber && selectedBarber._id) {
+            const fetchedTimeSlots = await BookingService.fetchAvailability(selectedBarber._id, date);
             setTimeSlots(fetchedTimeSlots);
             setCurrentStep(4);
         } else {
@@ -62,7 +62,7 @@ const Booking = () => {
             start: selectedTime.start,
             end: selectedTime.end,
             userId: 'user_id_here',
-            barberId: selectedBarber.id,
+            barberId: selectedBarber._id,
             service: selectedService.name,
             notes: ''
         };
@@ -115,12 +115,12 @@ const Booking = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {barbers.map(barber => (
                                     <div
-                                        key={barber.id}
+                                        key={barber._id}
                                         className="bg-white dark:bg-black-2 p-4 rounded-lg shadow-md flex flex-col justify-between cursor-pointer hover:bg-light-blue dark:hover:bg-blue"
                                         onClick={() => handleBarberSelect(barber)}
                                     >
                                         <div>
-                                            <h3 className="font-semibold text-black dark:text-light-gray">{barber.fullname}</h3>
+                                            <h3 className="font-semibold text-black dark:text-light-gray">{barber.fullName}</h3>
                                             <p className="text-dark-gray dark:text-uranian-blue">{barber.email}</p>
                                         </div>
                                     </div>
@@ -167,24 +167,23 @@ const Booking = () => {
                             <h2 className="text-2xl font-bold mb-4 text-black dark:text-light-gray">Choose a time</h2>
                             <div className='grid grid-cols-3 gap-4'>
                                 {timeSlots.map((time) => (
-                                    <div key={time.start} className="p-4 bg-white dark:bg-black-2 rounded-lg shadow-md cursor-pointer hover:bg-light-blue dark:hover:bg-blue">
-                                        <div
-                                            className={`time-selection text-center ${selectedTime === time ? 'bg-blue text-white' : 'bg-white text-black dark:bg-dark-gray dark:text-light-gray'}`}
-                                            onClick={() => handleTimeSelect(time)}
-                                        >
-                                            <div>
-                                                {new Intl.DateTimeFormat('en-US', {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    timeZone: 'UTC',
-                                                }).format(new Date(time.start))}
-                                                {" "}to{" "}
-                                                {new Intl.DateTimeFormat('en-US', {
-                                                    hour: '2-digit',
-                                                    minute: '2-digit',
-                                                    timeZone: 'UTC',
-                                                }).format(new Date(time.end))}
-                                            </div>
+                                    <div
+                                        key={time.start}
+                                        className={`p-4 bg-white dark:bg-black-2 rounded-lg shadow-md cursor-pointer hover:bg-light-blue dark:hover:bg-blue ${selectedTime === time ? 'bg-blue text-white' : 'bg-white text-black dark:bg-dark-gray dark:text-light-gray'}`}
+                                        onClick={() => handleTimeSelect(time)}
+                                    >
+                                        <div>
+                                            {new Intl.DateTimeFormat('en-US', {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                timeZone: 'UTC',
+                                            }).format(new Date(time.start))}
+                                            {" "}to{" "}
+                                            {new Intl.DateTimeFormat('en-US', {
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                                timeZone: 'UTC',
+                                            }).format(new Date(time.end))}
                                         </div>
                                     </div>
                                 ))}

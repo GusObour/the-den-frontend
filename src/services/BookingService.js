@@ -1,7 +1,7 @@
 class BookingService {
     async fetchServices() {
         try {
-            const response = await fetch('/api/services');
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/services`);
             const services = await response.json();
             return services;
         } catch (error) {
@@ -12,7 +12,7 @@ class BookingService {
 
     async fetchBarbers() {
         try {
-            const response = await fetch('/api/barbers');
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/barbers`);
             const barbers = await response.json();
             return barbers;
         } catch (error) {
@@ -23,7 +23,7 @@ class BookingService {
 
     async fetchAvailability(barberId, date) {
         try {
-            const response = await fetch(`/api/availability?barberId=${barberId}&date=${date}`);
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/availability?barberId=${barberId}&date=${date}`);
             const availability = await response.json();
             return availability;
         } catch (error) {
@@ -34,7 +34,7 @@ class BookingService {
 
     async createAppointment(appointmentData) {
         try {
-            const response = await fetch('/api/appointments', {
+            const response = await fetch('/appointments', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
