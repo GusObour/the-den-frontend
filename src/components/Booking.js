@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import BookingService from '../services/BookingService';
+import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Booking = () => {
+    const { auth } = useContext(AuthContext);
+    const navigate = useNavigate();
     const [services, setServices] = useState([]);
     const [barbers, setBarbers] = useState([]);
     const [selectedService, setSelectedService] = useState(null);
@@ -12,19 +18,35 @@ const Booking = () => {
     const [currentStep, setCurrentStep] = useState(1);
 
     useEffect(() => {
-        const fetchServices = async () => {
+        const fetchServicesAndBarbers = async () => {
             const fetchedServices = await BookingService.fetchServices();
             setServices(fetchedServices);
-        };
-
-        const fetchBarbers = async () => {
             const fetchedBarbers = await BookingService.fetchBarbers();
             setBarbers(fetchedBarbers);
         };
 
-        fetchServices();
-        fetchBarbers();
+        fetchServicesAndBarbers();
+
+        BookingService.connectSocket(handleWebSocketMessage);
+
+        return () => {
+            BookingService.disconnectSocket();
+        };
     }, []);
+
+    const handleWebSocketMessage = (data) => {
+        if (data.action === 'locked') {
+            toast.success('Appointment slot locked! You can now proceed with the booking.');
+            // setCurrentStep(5);
+        } else if (data.action === 'unavailable') {
+            toast.error('The selected appointment slot is no longer available.');
+            setCurrentStep(1);
+            setSelectedService(null);
+            setSelectedBarber(null);
+            setSelectedDate(null);
+            setSelectedTime(null);
+        }
+    };
 
     const handleServiceSelect = (service) => {
         setSelectedService(service);
@@ -43,8 +65,8 @@ const Booking = () => {
 
     const handleDateSelect = async (date) => {
         setSelectedDate(date);
-        if (selectedBarber && selectedBarber._id) {
-            const fetchedTimeSlots = await BookingService.fetchAvailability(selectedBarber._id, date);
+        if (selectedBarber && selectedBarber.id) {
+            const fetchedTimeSlots = await BookingService.fetchAvailability(selectedBarber.id, date);
             setTimeSlots(fetchedTimeSlots);
             setCurrentStep(4);
         } else {
@@ -54,24 +76,48 @@ const Booking = () => {
 
     const handleTimeSelect = (time) => {
         setSelectedTime(time);
+
+        if (!auth.isLoggedIn) {
+            toast.error('You must be logged in to book an appointment');
+            setTimeout(() => {
+                navigate('/login');
+
+            }, 2000);
+            return;
+        }
+
+        if (selectedBarber && selectedDate && time) {
+            BookingService.lockAppointment({
+                barberId: selectedBarber.id,
+                date: selectedDate,
+                start: time.start,
+                end: time.end
+            });
+        } else {
+            toast.error('Please select a service, barber, date, and time.');
+        }
     };
 
     const handleBooking = async () => {
         const appointmentData = {
+            userId: auth.user._id,
+            barberId: selectedBarber.id,
+            serviceId: selectedService._id,
             date: selectedDate,
             start: selectedTime.start,
-            end: selectedTime.end,
-            userId: 'user_id_here',
-            barberId: selectedBarber._id,
-            service: selectedService.name,
-            notes: ''
+            end: selectedTime.end
         };
 
-        const appointment = await BookingService.createAppointment(appointmentData);
-        if (appointment) {
-            alert('Appointment booked successfully!');
+        const response = await BookingService.bookAppointment(appointmentData);
+        if (response && response.ok) {
+            toast.success(`${response.message}`);
+            setCurrentStep(1);
+            setSelectedService(null);
+            setSelectedBarber(null);
+            setSelectedDate(null);
+            setSelectedTime(null);
         } else {
-            alert('Failed to book appointment.');
+            toast.error('Failed to book appointment.');
         }
     };
 
@@ -85,6 +131,7 @@ const Booking = () => {
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-black-3 p-4">
+            <ToastContainer />
             <div className="flex-1 flex flex-col md:flex-row">
                 <div className="flex-1">
                     {currentStep === 1 && (
@@ -115,13 +162,15 @@ const Booking = () => {
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {barbers.map(barber => (
                                     <div
-                                        key={barber._id}
+                                        key={barber.id}
                                         className="bg-white dark:bg-black-2 p-4 rounded-lg shadow-md flex flex-col justify-between cursor-pointer hover:bg-light-blue dark:hover:bg-blue"
                                         onClick={() => handleBarberSelect(barber)}
                                     >
                                         <div>
+                                            <img src={barber.headShot} alt={barber.fullName} className="w-full h-48 object-cover rounded-lg" />
                                             <h3 className="font-semibold text-black dark:text-light-gray">{barber.fullName}</h3>
                                             <p className="text-dark-gray dark:text-uranian-blue">{barber.email}</p>
+                                            <p className="text-dark-gray dark:text-uranian-blue">{barber.phoneNumber}</p>
                                         </div>
                                     </div>
                                 ))}
@@ -167,23 +216,24 @@ const Booking = () => {
                             <h2 className="text-2xl font-bold mb-4 text-black dark:text-light-gray">Choose a time</h2>
                             <div className='grid grid-cols-3 gap-4'>
                                 {timeSlots.map((time) => (
-                                    <div
-                                        key={time.start}
-                                        className={`p-4 bg-white dark:bg-black-2 rounded-lg shadow-md cursor-pointer hover:bg-light-blue dark:hover:bg-blue ${selectedTime === time ? 'bg-blue text-white' : 'bg-white text-black dark:bg-dark-gray dark:text-light-gray'}`}
-                                        onClick={() => handleTimeSelect(time)}
-                                    >
-                                        <div>
-                                            {new Intl.DateTimeFormat('en-US', {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                timeZone: 'UTC',
-                                            }).format(new Date(time.start))}
-                                            {" "}to{" "}
-                                            {new Intl.DateTimeFormat('en-US', {
-                                                hour: '2-digit',
-                                                minute: '2-digit',
-                                                timeZone: 'UTC',
-                                            }).format(new Date(time.end))}
+                                    <div key={time.start} className="p-4 bg-white dark:bg-black-2 rounded-lg shadow-md cursor-pointer hover:bg-light-blue dark:hover:bg-blue">
+                                        <div
+                                            className={`time-selection text-center ${selectedTime === time ? 'bg-blue text-white' : 'bg-white text-black dark:bg-dark-gray dark:text-light-gray'}`}
+                                            onClick={() => handleTimeSelect(time)}
+                                        >
+                                            <div>
+                                                {new Intl.DateTimeFormat('en-US', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    timeZone: 'UTC',
+                                                }).format(new Date(time.start))}
+                                                {" "}to{" "}
+                                                {new Intl.DateTimeFormat('en-US', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    timeZone: 'UTC',
+                                                }).format(new Date(time.end))}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}

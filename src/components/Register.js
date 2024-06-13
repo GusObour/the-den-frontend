@@ -4,6 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import validator from 'validator';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import countryCodes from 'country-codes-list';
+
+const countryCodesList = countryCodes.customList('countryCode', '[{countryCode}] {countryNameEn}: +{countryCallingCode}');
 
 const Register = () => {
   const [user, setUser] = useState({
@@ -11,6 +14,7 @@ const Register = () => {
     email: '',
     password: '',
     phoneNumber: '',
+    countryCode: '+1', // Default country code
     admin: false,
     agreeToSms: false,
   });
@@ -57,7 +61,7 @@ const Register = () => {
     formData.append('fullName', user.fullName);
     formData.append('email', user.email);
     formData.append('password', user.password);
-    formData.append('phoneNumber', user.phoneNumber);
+    formData.append('phoneNumber', `${user.countryCode}${user.phoneNumber}`);
     formData.append('admin', user.admin);
     formData.append('agreeToSms', user.agreeToSms);
     if (headShotFile) {
@@ -117,13 +121,27 @@ const Register = () => {
         </div>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2">Phone Number</label>
-          <input
-            type="text"
-            name="phoneNumber"
-            value={user.phoneNumber}
-            onChange={handleInputChange}
-            className="border p-2 w-full rounded focus:outline-none focus:ring-2 focus:ring-blue"
-          />
+          <div className="flex">
+            <select
+              name="countryCode"
+              value={user.countryCode}
+              onChange={handleInputChange}
+              className="border p-2 rounded-l focus:outline-none focus:ring-2 focus:ring-blue"
+            >
+              {Object.keys(countryCodesList).map((key) => (
+                <option key={key} value={countryCodesList[key].match(/\+(\d+)/)[1]}>
+                  {countryCodesList[key]}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              name="phoneNumber"
+              value={user.phoneNumber}
+              onChange={handleInputChange}
+              className="border p-2 w-full rounded-r focus:outline-none focus:ring-2 focus:ring-blue"
+            />
+          </div>
         </div>
         <div className="mb-4">
           <label className="block text-gray-700 mb-2">Agree to receive text messages</label>

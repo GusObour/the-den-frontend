@@ -1,4 +1,10 @@
+import { toast } from 'react-toastify';
+
 class BookingService {
+    constructor() {
+        this.socket = null;
+    }
+
     async fetchServices() {
         try {
             const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/services`);
@@ -32,19 +38,51 @@ class BookingService {
         }
     }
 
-    async createAppointment(appointmentData) {
+    connectSocket(onMessageCallback) {
+        this.socket = new WebSocket('ws://localhost:5000');
+        this.socket.onopen = () => {
+            console.log('WebSocket connection established');
+        };
+        this.socket.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+        this.socket.onmessage = (message) => {
+            const data = JSON.parse(message.data);
+            onMessageCallback(data);
+        };
+    }
+
+    disconnectSocket() {
+        if (this.socket) {
+            this.socket.close();
+        }
+    }
+
+    lockAppointment(appointmentData) {
+        if (this.socket) {
+            this.socket.send(JSON.stringify({
+                action: 'lock',
+                appointmentData
+            }));
+        } else {
+            console.error('WebSocket connection is not established.');
+        }
+    }
+
+    async bookAppointment(appointmentData) {
         try {
-            const response = await fetch('/appointments', {
+            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/book/appointment`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(appointmentData)
             });
-            const appointment = await response.json();
-            return appointment;
-        } catch (error) {
-            console.error('Error creating appointment:', error);
+
+            return response.json();
+        } catch (e) {
+            console.error('Error booking appointment:', e);
+            toast.error('Failed to book appointment');
             return null;
         }
     }

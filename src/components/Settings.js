@@ -6,10 +6,8 @@ import { AuthContext } from '../context/AuthContext';
 
 const Settings = () => {
   const { auth } = useContext(AuthContext);
-  console.log(auth);
   const [user, setUser] = useState({
-    firstName: '',
-    lastName: '',
+    fullName: '',
     email: '',
     phoneNumber: '',
     headShot: ''
@@ -44,8 +42,7 @@ const Settings = () => {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    // formData.append('firstName', user.firstName);
-    // formData.append('lastName', user.lastName);
+    formData.append('fullName', user.fullName);
     formData.append('email', user.email);
     formData.append('phoneNumber', user.phoneNumber);
     if (headShotFile) {
@@ -129,30 +126,19 @@ const Settings = () => {
           <label className="block text-gray-300 mb-2">Full Name</label>
           <input
             type="text"
-            name="firstName"
-            value={user.fullName}
+            name="fullName"
+            value={user.fullName || ''}
             onChange={handleInputChange}
             className="w-full p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue"
             required
           />
         </div>
-        {/* <div>
-          <label className="block text-gray-300 mb-2">Last Name</label>
-          <input
-            type="text"
-            name="lastName"
-            value={user.fullName}
-            onChange={handleInputChange}
-            className="w-full p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue"
-            required
-          />
-        </div> */}
         <div>
           <label className="block text-gray-300 mb-2">Email</label>
           <input
             type="email"
             name="email"
-            value={user.email}
+            value={user.email || ''}
             onChange={handleInputChange}
             className="w-full p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue"
             required
@@ -163,7 +149,7 @@ const Settings = () => {
           <input
             type="text"
             name="phoneNumber"
-            value={user.phoneNumber}
+            value={user.phoneNumber || ''}
             onChange={handleInputChange}
             className="w-full p-3 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-blue"
           />
