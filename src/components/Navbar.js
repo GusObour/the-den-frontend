@@ -18,7 +18,7 @@ const Navbar = () => {
             <div className="container mx-auto flex justify-between items-center">
                 <Link to="/" className="flex items-center">
                     <img className="h-10 mr-3" src={`${process.env.PUBLIC_URL}/imgs/TheDen.jpeg`} alt="The Den Logo" />
-                    <span className="font-bold text-xl text-black">The Den | Cosmetology | Massage Therapist</span>
+                    <span className="font-bold text-xl text-black">The Den</span>
                 </Link>
                 <div className="hidden md:flex space-x-6">
                     <ScrollLink to="about-section" smooth={true} duration={500} className="hover:text-gray-500 text-black cursor-pointer">About</ScrollLink>

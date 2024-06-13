@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 const ProtectedRoute = ({ element, adminOnly, ...rest }) => {
@@ -13,7 +13,7 @@ const ProtectedRoute = ({ element, adminOnly, ...rest }) => {
     return <Navigate to="/user" />;
   }
 
-  return <Route {...rest} element={element} />;
+  return element;
 };
 
 export default ProtectedRoute;

@@ -1,12 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { FaUser, FaCalendarAlt, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { AuthContext } from '../../context/AuthContext';
 
 const UserSidebar = () => {
+  const { auth } = useContext(AuthContext);
   return (
     <div className="h-screen bg-black-2 text-white w-64 py-8 px-4">
       <div className="flex items-center justify-center mb-8">
-        <h2 className="text-3xl font-bold">User</h2>
+        <h2 className="text-3xl font-bold">Welcome, {auth.user.fullName}</h2>
       </div>
       <nav>
         <ul>
