@@ -3,6 +3,9 @@ import { toast } from 'react-toastify';
 class BookingService {
     constructor() {
         this.socket = null;
+        this.reconnectInterval = 5000;
+        this.reconnectTimeout = null;
+        this.onMessageCallback = null;
     }
 
     async fetchServices() {
@@ -39,27 +42,42 @@ class BookingService {
     }
 
     connectSocket(onMessageCallback) {
+        this.onMessageCallback = onMessageCallback;
         this.socket = new WebSocket('ws://localhost:5000');
-        this.socket.onopen = () => {
-            console.log('WebSocket connection established');
-        };
-        this.socket.onclose = () => {
-            console.log('WebSocket connection closed');
-        };
         this.socket.onmessage = (message) => {
             const data = JSON.parse(message.data);
             onMessageCallback(data);
         };
+        this.socket.onclose = () => {
+            console.warn('WebSocket connection closed, attempting to reconnect...');
+            this.reconnectSocket();
+        };
+        this.socket.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            this.socket.close();
+        };
+    }
+
+    reconnectSocket() {
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+        }
+        this.reconnectTimeout = setTimeout(() => {
+            this.connectSocket(this.onMessageCallback);
+        }, this.reconnectInterval);
     }
 
     disconnectSocket() {
         if (this.socket) {
             this.socket.close();
         }
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+        }
     }
 
     lockAppointment(appointmentData) {
-        if (this.socket) {
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(JSON.stringify({
                 action: 'lock',
                 appointmentData

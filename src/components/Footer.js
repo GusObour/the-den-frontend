@@ -1,12 +1,11 @@
 import React from 'react';
 import { Link as ScrollLink } from 'react-scroll';
-import '../styles/Footer.css';
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="p-4 bg-white rounded-lg shadow md:px-6 md:py-8 dark:bg-gray-800">
+        <footer className="p-4 bg-white rounded-lg shadow md:px-6 md:py-8 dark:bg-gray-800 mt-auto">
             <div className="sm:flex sm:items-center sm:justify-between">
                 <a href="#" target="_blank" rel="noopener noreferrer" className="flex items-center mb-4 sm:mb-0">
                     <img src={`${process.env.PUBLIC_URL}/imgs/TheDen.jpeg`} alt="The Den Logo" className="mr-4 h-8" />

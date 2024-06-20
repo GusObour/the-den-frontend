@@ -17,33 +17,35 @@ import './index.css';
 
 function App() {
   return (
-    <AuthContextProvider>
-      <Router>
-        <div className="App">
+    <Router>
+      <AuthContextProvider>
+        <div className="App min-h-screen flex flex-col">
           <Navbar />
           <ToastContainer />
-          <Routes> 
-            <Route path="/admin/*" element={<ProtectedRoute element={<AdminDashboard />} adminOnly />} />
-            <Route path="/user/*" element={<ProtectedRoute element={<UserDashboard />} />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/location" element={<LocationAndAbout />} />
-            <Route path="/" element={
-              <main>
-                <section id="about-section">
-                  <LocationAndAbout />
-                </section>
-                <section id="booking-section">
-                  <Booking />
-                </section>
-                <InstagramEmbed />
-              </main>
-            } />
-          </Routes>
+          <main className="flex-grow">
+            <Routes> 
+              <Route path="/admin/*" element={<ProtectedRoute element={<AdminDashboard />} adminOnly />} />
+              <Route path="/user/*" element={<ProtectedRoute element={<UserDashboard />} />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/location" element={<LocationAndAbout />} />
+              <Route path="/" element={
+                <>
+                  <section id="about-section">
+                    <LocationAndAbout />
+                  </section>
+                  <section id="booking-section">
+                    <Booking />
+                  </section>
+                  <InstagramEmbed />
+                </>
+              } />
+            </Routes>
+          </main>
           <Footer />
         </div>
-      </Router>
-    </AuthContextProvider>
+      </AuthContextProvider>
+    </Router>
   );
 }
 

@@ -1,14 +1,24 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AuthContext } from '../context/AuthContext';
 import validator from 'validator';
 
 const Login = () => {
-  const { login } = useContext(AuthContext);
+  const { login, auth } = useContext(AuthContext);
   const [credentials, setCredentials] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (auth.isLoggedIn) {
+      if (auth.user.admin) {
+        navigate('/admin');
+      } else {
+        navigate('/user');
+      }
+    }
+  }, [auth, navigate]);
 
   const handleInputChange = (e) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });

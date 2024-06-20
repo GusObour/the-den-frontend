@@ -37,7 +37,6 @@ const Booking = () => {
     const handleWebSocketMessage = (data) => {
         if (data.action === 'locked') {
             toast.success('Appointment slot locked! You can now proceed with the booking.');
-            // setCurrentStep(5);
         } else if (data.action === 'unavailable') {
             toast.error('The selected appointment slot is no longer available.');
             setCurrentStep(1);
@@ -45,6 +44,11 @@ const Booking = () => {
             setSelectedBarber(null);
             setSelectedDate(null);
             setSelectedTime(null);
+        } else if (data.action === 'lock_limit_reached') {
+            const lockedSlots = data.lockedSlots.map(slot =>
+                `Date: ${new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.date))} Time: ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.start))} to ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.end))}`
+            ).join(', ');
+            toast.error(`Lock limit reached. Please try again later or select one of the already locked time slots. Locked slots: ${lockedSlots}`);
         }
     };
 
@@ -81,7 +85,6 @@ const Booking = () => {
             toast.error('You must be logged in to book an appointment');
             setTimeout(() => {
                 navigate('/login');
-
             }, 2000);
             return;
         }
@@ -91,7 +94,8 @@ const Booking = () => {
                 barberId: selectedBarber.id,
                 date: selectedDate,
                 start: time.start,
-                end: time.end
+                end: time.end,
+                userId: auth.user._id
             });
         } else {
             toast.error('Please select a service, barber, date, and time.');
@@ -109,7 +113,7 @@ const Booking = () => {
         };
 
         const response = await BookingService.bookAppointment(appointmentData);
-        if (response && response.ok) {
+        if (response.success) {
             toast.success(`${response.message}`);
             setCurrentStep(1);
             setSelectedService(null);
@@ -147,6 +151,7 @@ const Booking = () => {
                                         <div>
                                             <h3 className="font-semibold text-black dark:text-light-gray">{service.name}</h3>
                                             <p className="text-dark-gray dark:text-uranian-blue">{service.duration} mins</p>
+                                            <p className="text-dark-gray dark:text-uranian-blue">{service.description}</p>
                                         </div>
                                         <div className="text-right mt-4">
                                             <span className="bg-light-gray dark:bg-dark-gray text-black dark:text-light-gray px-2 py-1 rounded">${service.price}</span>
