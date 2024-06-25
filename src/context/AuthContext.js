@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import {jwtDecode} from 'jwt-decode';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Modal from 'react-modal';
 
 const AuthContext = createContext();
@@ -10,6 +10,7 @@ const AuthContextProvider = ({ children }) => {
   const [auth, setAuth] = useState({ isLoggedIn: false, user: null });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -27,9 +28,11 @@ const AuthContextProvider = ({ children }) => {
         navigate('/login');
       }
     } else {
-      navigate('/login');
+      if (!['/login', '/register'].includes(location.pathname)) {
+        navigate('/login');
+      }
     }
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const refreshToken = async () => {
     try {
@@ -72,7 +75,7 @@ const AuthContextProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const interval = setInterval(() => { 
       const token = localStorage.getItem('token');
       if (token) {
         try {

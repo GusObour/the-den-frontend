@@ -1,21 +1,22 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import { AuthContext } from '../context/AuthContext';
-import validator from 'validator';
+import React, { useState, useContext, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import { AuthContext } from "../context/AuthContext";
+import validator from "validator";
 
 const Login = () => {
   const { login, auth } = useContext(AuthContext);
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
-  const [error, setError] = useState('');
+  const [credentials, setCredentials] = useState({ email: "", password: "" });
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log("Auth state on Login mount:", auth);
     if (auth.isLoggedIn) {
       if (auth.user.admin) {
-        navigate('/admin');
+        navigate("/admin");
       } else {
-        navigate('/user');
+        navigate("/user");
       }
     }
   }, [auth, navigate]);
@@ -26,9 +27,9 @@ const Login = () => {
 
   const validateInputs = () => {
     if (!validator.isEmail(credentials.email)) {
-      return 'Invalid email format';
+      return "Invalid email format";
     }
-    return '';
+    return "";
   };
 
   const handleSubmit = async (e) => {
@@ -41,22 +42,27 @@ const Login = () => {
       }
 
       const user = await login(credentials);
-      toast.success('Successfully logged in!');
+      toast.success("Successfully logged in!");
       if (user.admin) {
-        navigate('/admin');
+        navigate("/admin");
       } else {
-        navigate('/user');
+        navigate("/user");
       }
     } catch (error) {
-      setError('Invalid email or password');
-      toast.error('Login failed!');
+      setError("Invalid email or password");
+      toast.error("Login failed!");
     }
   };
 
   return (
     <div className="container mx-auto py-20 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center text-black-2">Login</h1>
-      <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+      <h1 className="text-3xl font-bold mb-8 text-center text-black-2">
+        Login
+      </h1>
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md"
+      >
         <div className="mb-4">
           <label className="block text-gray-700 mb-2">Email</label>
           <input
@@ -80,9 +86,17 @@ const Login = () => {
           />
         </div>
         {error && <p className="text-red-500 mb-4">{error}</p>}
-        <button type="submit" className="bg-blue text-white py-2 px-4 w-full rounded hover:bg-light-blue transition duration-200">Login</button>
+        <button
+          type="submit"
+          className="bg-blue text-white py-2 px-4 w-full rounded hover:bg-light-blue transition duration-200"
+        >
+          Login
+        </button>
         <p className="text-center mt-4">
-          Don't have an account? <a href="/register" className="text-blue-500 hover:underline">Register</a>
+          Don't have an account?{" "}
+          <Link to="/register" className="text-blue-500 hover:underline">
+            Register
+          </Link>
         </p>
       </form>
     </div>

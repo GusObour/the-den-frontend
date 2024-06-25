@@ -14,6 +14,7 @@ class AvailabilityService {
       const response = await axios.get(`${this.apiBaseUrl}/barbers/availability?barberId=${barberId}`, {
         headers: this.authHeaders,
       });
+      
       return response.data.availability;
     } catch (error) {
       throw new Error('Failed to fetch availabilities');
