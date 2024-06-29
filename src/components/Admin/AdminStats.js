@@ -21,7 +21,7 @@ const AdminStats = () => {
     const fetchAppointments = async () => {
       try {
         const data = await service.fetchAppointments(auth.user._id, auth.user.admin);
-        setUpcomingAppointments(data.filter(a => new Date(a.start) >= new Date()));
+        setUpcomingAppointments(data.filter(a => new Date(a.start) >= new Date() && a.status === "Booked"));
       } catch (error) {
         toast.error('Failed to fetch appointments');
       }

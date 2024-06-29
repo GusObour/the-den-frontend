@@ -28,7 +28,7 @@ const AuthContextProvider = ({ children }) => {
         navigate('/login');
       }
     } else {
-      if (!['/login', '/register'].includes(location.pathname)) {
+      if (!['/login', '/register', '/'].includes(location.pathname)) {
         navigate('/login');
       }
     }
@@ -62,20 +62,24 @@ const AuthContextProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    axios.post(`${process.env.REACT_APP_API_BASE_URL}/auth/logout`).then(() => {
+  const logout = async () => {
+    try {
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/auth/logout`);
       handleLogout();
-    });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const handleLogout = () => {
     setAuth({ isLoggedIn: false, user: null });
     localStorage.removeItem('token');
     navigate('/login');
+    setIsModalOpen(false);
   };
 
   useEffect(() => {
-    const interval = setInterval(() => { 
+    const interval = setInterval(() => {
       const token = localStorage.getItem('token');
       if (token) {
         try {
@@ -91,7 +95,7 @@ const AuthContextProvider = ({ children }) => {
           handleLogout();
         }
       }
-    }, 60000); // Check every minute
+    }, 60000);
 
     return () => clearInterval(interval);
   }, []);

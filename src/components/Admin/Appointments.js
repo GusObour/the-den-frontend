@@ -26,7 +26,46 @@ const Appointments = () => {
     };
 
     fetchAppointments();
+
   }, [auth.user._id, auth.user.admin]);
+
+  async function handleCompleteAppointment(id) {
+    try {
+      const response = await service.completeAppointment(id, auth.user._id);
+      const results = response.data;
+  
+      if (results.success) {
+        const updatedAppointments = appointments.map((appointment) =>
+          appointment._id === id ? { ...appointment, status: "Completed" } : appointment
+        );
+        setAppointments(updatedAppointments);
+        toast.success("Appointment completed successfully");
+      } else {
+        toast.error(results.message);
+      }
+    } catch (error) {
+      console.error('Failed to complete appointment:', error);
+      toast.error("Failed to complete appointment");
+    }
+  }
+
+  async function handleDeleteAppointment(id) {
+    try {
+      const response = await service.cancelAppointment(id, auth.user._id, auth.user.admin);
+      const results = response.data;
+  
+      if (results.success) {
+        setAppointments(appointments.filter((appointment) => appointment._id !== id));
+        toast.success("Appointment canceled successfully");
+      } else {
+        toast.error(results.message);
+      }
+    } catch (error) {
+      console.error('Failed to delete appointment:', error);
+      toast.error("Failed to delete appointment");
+    }
+  }
+  
 
   return (
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white min-h-screen">

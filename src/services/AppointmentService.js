@@ -1,137 +1,87 @@
-import axios from 'axios';
+import api from '../context/AxiosInterceptors';
 
 class AppointmentService {
-    constructor() {
-        this.baseUrl = process.env.REACT_APP_API_BASE_URL;
-        this.token = localStorage.getItem('token');
+  constructor() {
+    this.baseUrl = process.env.REACT_APP_API_BASE_URL;
+  }
+
+  async fetchAppointments(currId, isAdmin) {
+    try {
+      const endpoint = isAdmin
+        ? `${this.baseUrl}/barbers/appointments?barberId=${currId}`
+        : `${this.baseUrl}/user/appointments?userId=${currId}`;
+
+      const response = await api.get(endpoint);
+      return response.data.appointments;
+    } catch (error) {
+      console.error('Failed to fetch appointments:', error);
+      throw new Error('Failed to fetch appointments');
     }
+  }
 
-    get authHeaders() {
-        return {
-            Authorization: `Bearer ${this.token}`,
-            'Content-Type': 'application/json',
-        };
+  async completeAppointment(appointmentId, userId) {
+    try {
+      const response = await api.put(`${this.baseUrl}/barbers/complete-appointment/${appointmentId}/${userId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to complete appointment:', error);
+      throw error;
     }
+  }
 
-    async fetchAppointments(currId, isAdmin) {
-        try {
-            const endpoint = isAdmin
-                ? `${this.baseUrl}/barbers/appointments?barberId=${currId}`
-                : `${this.baseUrl}/user/appointments?userId=${currId}`;
+  async cancelAppointment(appointmentId, userId, isAdmin) {
+    try {
+      const endpoint = isAdmin
+        ? `${this.baseUrl}/barbers/cancel-appointment/${appointmentId}/${userId}`
+        : `${this.baseUrl}/user/cancel-appointment/${appointmentId}/${userId}`;
 
-            const response = await axios.get(endpoint, {
-                headers: this.authHeaders,
-            });
-
-            return response.data.appointments;
-        } catch (error) {
-            console.error('Failed to fetch appointments:', error);
-            throw new Error('Failed to fetch appointments');
-        }
+      const response = await api.delete(endpoint);
+      return response.data;
+    } catch (error) {
+      console.error('Failed to delete appointment:', error);
+      throw new Error('Failed to delete appointment');
     }
+  }
 
-    async completeAppointment(id) {
-        try {
-            await axios.put(`${this.baseUrl}/appointments/${id}/complete`, null, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-            this.cache = this.cache.map(appointment => (appointment.id === id ? { ...appointment, status: 'Completed' } : appointment));
-        } catch (error) {
-            console.error('Failed to complete appointment:', error);
-            throw new Error('Failed to complete appointment');
-        }
+  async getCompletedAppointments() {
+    try {
+      const response = await api.get(`${this.baseUrl}/stats/completed-appointments`);
+      return response.data.completedAppointments;
+    } catch (error) {
+      console.error('Failed to fetch completed appointments:', error);
+      throw new Error('Failed to fetch completed appointments');
     }
+  }
 
-    async cancelAppointment(appointmentId, userId, isAdmin) {
-        try {
-            const endpoint = isAdmin
-                ? `${this.baseUrl}/barbers/cancel-appointment/${appointmentId}/${userId}`
-                : `${this.baseUrl}/user/cancel-appointment/${appointmentId}/${userId}`;
-    
-            const response = await axios.delete(endpoint, {
-                headers: this.authHeaders
-            });
-    
-            return response.data;
-        } catch (error) {
-            console.error('Failed to delete appointment:', error);
-            throw new Error('Failed to delete appointment');
-        }
+  async getTodaysCanceledAppointments() {
+    try {
+      const response = await api.get(`${this.baseUrl}/stats/canceled-appointments`);
+      return response.data.canceledAppointments;
+    } catch (error) {
+      console.error('Failed to fetch canceled appointments:', error);
+      throw new Error('Failed to fetch canceled appointments');
     }
-    
+  }
 
-
-    getCachedAppointments() {
-        return this.cache;
+  async getTodaysEarnings() {
+    try {
+      const response = await api.get(`${this.baseUrl}/stats/todays-earnings`);
+      return response.data.earnings;
+    } catch (error) {
+      console.error('Failed to fetch earnings:', error);
+      throw new Error('Failed to fetch earnings');
     }
+  }
 
-
-    async getCompletedAppointments() {
-        try {
-            const response = await axios.get(`${this.baseUrl}/stats/completed-appointments`, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            return response.data.completedAppointments;
-        } catch (error) {
-            console.error('Failed to fetch completed appointments:', error);
-            throw new Error('Failed to fetch completed appointments');
-        }
+  async getTotalWeekEarnings() {
+    try {
+      const response = await api.get(`${this.baseUrl}/stats/total-week-earnings`);
+      return response.data.totalEarnings;
+    } catch (error) {
+      console.error('Failed to fetch total earnings:', error);
+      throw new Error('Failed to fetch total earnings');
     }
-
-    async getTodaysCanceledAppointments() {
-        try {
-            const response = await axios.get(`${this.baseUrl}/stats/canceled-appointments`, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            return response.data.canceledAppointments;
-        } catch (error) {
-            console.error('Failed to fetch canceled appointments:', error);
-            throw new Error('Failed to fetch canceled appointments');
-        }
-    }
-
-    async getTodaysEarnings() {
-        try {
-            const response = await axios.get(`${this.baseUrl}/stats/todays-earnings`, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            return response.data.earnings;
-        } catch (error) {
-            console.error('Failed to fetch earnings:', error);
-            throw new Error('Failed to fetch earnings');
-        }
-    }
-
-    async getTotalWeekEarnings() {
-        try {
-            const response = await axios.get(`${this.baseUrl}/stats/total-week-earnings`, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            return response.data.totalEarnings;
-        } catch (error) {
-            console.error('Failed to fetch total earnings:', error);
-            throw new Error('Failed to fetch total earnings');
-        }
-    }
+  }
 }
 
 export default AppointmentService;

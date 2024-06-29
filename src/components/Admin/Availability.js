@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { toast } from 'react-toastify';
-import { FaPlus, FaCalendarPlus } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
 import Modal from 'react-modal';
-import BulkAvailabilityForm from './BulkAvailabilityForm';
 import { AuthContext } from '../../context/AuthContext';
 import AvailabilityList from './AvailabilityList';
-import AvailabilityForm from './AvailabilityForm';
+import CombinedAvailabilityForm from './AvailabilityForm';
 import AvailabilityService from '../../services/AvailabilityService';
 
 Modal.setAppElement('#root');
@@ -15,8 +14,16 @@ const Availability = () => {
   const [availabilities, setAvailabilities] = useState([]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isBulkAdding, setIsBulkAdding] = useState(false);
-  const [currentAvailability, setCurrentAvailability] = useState(null);
+  const [currentAvailability, setCurrentAvailability] = useState({
+    blockType: 'none',
+    startDate: '',
+    endDate: '',
+    start: '',
+    end: '',
+    reason: '',
+    interval: '1',
+    recurringType: 'none',
+  });
 
   useEffect(() => {
     fetchAvailabilities();
@@ -31,31 +38,23 @@ const Availability = () => {
     }
   };
 
-  const handleAddOrEditAvailability = async (e, isEdit) => {
-    e.preventDefault();
-    try {
-      const response = isEdit
-        ? await AvailabilityService.updateAvailability(currentAvailability._id, currentAvailability)
-        : await AvailabilityService.addAvailability(currentAvailability);
-
-      const updatedAvailabilities = isEdit
-        ? availabilities.map((availability) =>
-            availability._id === currentAvailability._id ? response : availability
-          )
-        : [...availabilities, response];
-
-      setAvailabilities(updatedAvailabilities);
-      setModalIsOpen(false);
-      toast.success(`Availability ${isEdit ? 'updated' : 'added'} successfully`);
-    } catch (error) {
-      toast.error(error.message);
+  const handleAddOrEditAvailability = async (availability) => {
+    if (isEditing) {
+      await AvailabilityService.updateAvailability(availability._id, availability);
+      setAvailabilities((prev) =>
+        prev.map((item) => (item._id === availability._id ? availability : item))
+      );
+    } else {
+      const newAvailability = await AvailabilityService.addAvailability(availability);
+      setAvailabilities((prev) => [...prev, newAvailability]);
     }
+    setModalIsOpen(false);
   };
 
   const handleDeleteAvailability = async (id) => {
     try {
       await AvailabilityService.deleteAvailability(id);
-      setAvailabilities(availabilities.filter((availability) => availability._id !== id));
+      setAvailabilities((prev) => prev.filter((item) => item._id !== id));
       toast.success('Availability deleted successfully');
     } catch (error) {
       toast.error(error.message);
@@ -64,31 +63,30 @@ const Availability = () => {
 
   const openEditModal = (availability) => {
     setIsEditing(true);
-    setIsBulkAdding(false);
     setCurrentAvailability({
       ...availability,
-      date: availability.date.split('T')[0],
+      blockType: availability.blockType || 'none',
+      startDate: availability.date.split('T')[0],
       start: availability.start.split('T')[1].substring(0, 5),
       end: availability.end.split('T')[1].substring(0, 5),
+      interval: availability.interval || '1',
+      recurringType: availability.recurringType || 'none',
     });
     setModalIsOpen(true);
   };
 
   const openAddModal = () => {
     setIsEditing(false);
-    setIsBulkAdding(false);
     setCurrentAvailability({
-      barber: auth.user.fullName,
-      date: '',
+      blockType: 'none',
+      startDate: '',
+      endDate: '',
       start: '',
       end: '',
+      reason: '',
+      interval: '1',
+      recurringType: 'none',
     });
-    setModalIsOpen(true);
-  };
-
-  const openBulkAddModal = () => {
-    setIsEditing(false);
-    setIsBulkAdding(true);
     setModalIsOpen(true);
   };
 
@@ -97,10 +95,10 @@ const Availability = () => {
       <h2 className="text-3xl font-bold mb-6">Manage Availability</h2>
       <div className="flex flex-col sm:flex-row sm:space-x-4 mb-6">
         <button
-          onClick={openBulkAddModal}
-          className="bg-green-500 flex items-center justify-center text-white py-2 px-4 rounded hover:bg-green-600 transition duration-200"
+          onClick={openAddModal}
+          className="bg-blue-500 flex items-center justify-center text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200"
         >
-          <FaCalendarPlus className="mr-2" /> Add Bulk Availability
+          <FaPlus className="mr-2" /> Add Availability
         </button>
       </div>
       <AvailabilityList
@@ -115,18 +113,14 @@ const Availability = () => {
         overlayClassName="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center"
       >
         <h2 className="text-2xl font-bold mb-6">
-          {isEditing ? 'Edit Availability' : isBulkAdding ? 'Add Bulk Availability' : 'Add Availability'}
+          {isEditing ? 'Edit Availability' : 'Add Availability'}
         </h2>
-        {isBulkAdding ? (
-          <BulkAvailabilityForm barberId={auth.user._id} />
-        ) : (
-          <AvailabilityForm
-            isEditing={isEditing}
-            currentAvailability={currentAvailability}
-            onChange={setCurrentAvailability}
-            onSubmit={(e) => handleAddOrEditAvailability(e, isEditing)}
-          />
-        )}
+        <CombinedAvailabilityForm
+          isEditing={isEditing}
+          currentAvailability={currentAvailability}
+          onChange={setCurrentAvailability}
+          onSubmit={handleAddOrEditAvailability}
+        />
       </Modal>
     </div>
   );
