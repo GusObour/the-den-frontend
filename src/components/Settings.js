@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from "react-toastify";
 import { FaSave, FaTrash, FaKey } from 'react-icons/fa';
 import { AuthContext } from '../context/AuthContext';
+import SettingsService from '../services/SettingsService';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Settings = () => {
-  const { auth } = useContext(AuthContext);
+  const { auth, setAuth } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [user, setUser] = useState({
     fullName: '',
     email: '',
     phoneNumber: '',
-    headShot: ''
+    headShot: '',
+    _id: ''
   });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -22,6 +25,8 @@ const Settings = () => {
   useEffect(() => {
     if (auth.user) {
       setUser(auth.user);
+    } else {
+      navigate('/login');
     }
   }, [auth.user]);
 
@@ -45,21 +50,31 @@ const Settings = () => {
     formData.append('fullName', user.fullName);
     formData.append('email', user.email);
     formData.append('phoneNumber', user.phoneNumber);
+    formData.append('userId', user._id);
     if (headShotFile) {
       formData.append('headShot', headShotFile);
     }
 
     try {
-      const response = await axios.put(`${process.env.REACT_APP_API_BASE_URL}/user/profile`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      setUser(response.data);
-      toast.success('Profile updated successfully');
+      const updatedUser = await SettingsService.updateUserProfile(user._id, formData);
+      if (updatedUser) {
+        setUser(updatedUser);
+        setAuth({
+          ...auth,
+          user: {
+            ...auth.user,
+            fullName: updatedUser.fullName,
+            email: updatedUser.email,
+            phoneNumber: updatedUser.phoneNumber,
+            headShot: updatedUser.headShot
+          }
+        });
+        toast.success('Profile updated successfully');
+      } else {
+        toast.error('Failed to update profile');
+      }
     } catch (error) {
-      toast.error('Failed to update profile');
+      toast.error(error.message);
     }
   };
 
@@ -70,46 +85,45 @@ const Settings = () => {
       return;
     }
     try {
-      await axios.put(`${process.env.REACT_APP_API_BASE_URL}/user/change-password`, passwordData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      toast.success('Password changed successfully');
+      const response = await SettingsService.changePassword(user._id, passwordData);
+      toast.success(response.message);
+
+      // Clear local storage and redirect to login
+      localStorage.removeItem('token');
+      setAuth({ isLoggedIn: false, user: null });
+      navigate('/login');
+
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       });
     } catch (error) {
-      toast.error('Failed to change password');
+      toast.error(error.message);
     }
   };
 
   const handleDeleteAccount = async () => {
     if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
       try {
-        await axios.delete(`${process.env.REACT_APP_API_BASE_URL}/user/profile`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        await SettingsService.deleteUserAccount(user._id);
         toast.success('Account deleted successfully');
         localStorage.removeItem('token');
-        window.location.href = '/login';
+        navigate('/login');
       } catch (error) {
-        toast.error('Failed to delete account');
+        toast.error(error.message);
       }
     }
   };
 
   return (
     <div className="bg-black-3 p-6 rounded-lg shadow-lg text-white">
+      <ToastContainer />
       <h2 className="text-3xl font-bold mb-6">Account Settings</h2>
       <form onSubmit={handleUpdateProfile} className="space-y-6 mb-8">
         <div className="flex items-center mb-6">
           <img
-            src={user.headShot || `${process.env.PUBLIC_URL}/default-headShot.png`}
+            src={user.headShot || `${process.env.REACT_APP_API_BASE_URL}/default-headShot.png`}
             alt="headShot"
             className="w-16 h-16 rounded-full mr-4"
           />

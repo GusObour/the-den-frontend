@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useState, useEffect, useRef } from 'react';
+import api from './AxiosInterceptors';
 import {jwtDecode} from 'jwt-decode';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Modal from 'react-modal';
@@ -9,6 +9,8 @@ const AuthContext = createContext();
 const AuthContextProvider = ({ children }) => {
   const [auth, setAuth] = useState({ isLoggedIn: false, user: null });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTimer, setModalTimer] = useState(60); // 60 seconds timer
+  const timerRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,7 +38,7 @@ const AuthContextProvider = ({ children }) => {
 
   const refreshToken = async () => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/auth/refresh-token`);
+      const response = await api.post(`/auth/refresh-token`);
       const { token } = response.data;
       const decoded = jwtDecode(token);
       setAuth({ isLoggedIn: true, user: decoded });
@@ -50,7 +52,7 @@ const AuthContextProvider = ({ children }) => {
 
   const login = async (credentials) => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/auth/login`, credentials);
+      const response = await api.post(`/auth/login`, credentials);
       const { token } = response.data;
       const decoded = jwtDecode(token);
       setAuth({ isLoggedIn: true, user: decoded });
@@ -64,7 +66,7 @@ const AuthContextProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/auth/logout`);
+      await api.post(`/auth/logout`);
       handleLogout();
     } catch (error) {
       console.error('Logout failed:', error);
@@ -86,6 +88,7 @@ const AuthContextProvider = ({ children }) => {
           const decoded = jwtDecode(token);
           if (decoded.exp * 1000 < Date.now() + 5 * 60 * 1000) {
             setIsModalOpen(true);
+            setModalTimer(60);
           }
           if (decoded.exp * 1000 < Date.now()) {
             refreshToken();
@@ -95,13 +98,44 @@ const AuthContextProvider = ({ children }) => {
           handleLogout();
         }
       }
-    }, 60000);
+    }, 60000); // Check every 60 seconds
 
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (isModalOpen) {
+      timerRef.current = setInterval(() => {
+        setModalTimer((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current);
+            handleLogout();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(timerRef.current);
+    }
+  }, [isModalOpen]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (isModalOpen) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isModalOpen]);
+
   return (
-    <AuthContext.Provider value={{ auth, login, logout }}>
+    <AuthContext.Provider value={{ auth, setAuth, login, logout }}>
       {children}
       <Modal
         isOpen={isModalOpen}
@@ -111,6 +145,7 @@ const AuthContextProvider = ({ children }) => {
       >
         <h2 className="text-2xl font-bold mb-6">Session Expiring</h2>
         <p className="mb-4">Your session is about to expire. Would you like to stay logged in?</p>
+        <p className="mb-4">Time remaining: {modalTimer} seconds</p>
         <div className="flex justify-end space-x-4">
           <button
             onClick={refreshToken}

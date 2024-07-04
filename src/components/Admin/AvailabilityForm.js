@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toast } from 'react-toastify';
+import moment from 'moment';
 
 const CombinedAvailabilityForm = ({ isEditing, currentAvailability, onChange, onSubmit }) => {
   const [blockType, setBlockType] = useState(currentAvailability.blockType || 'none');
@@ -32,19 +33,25 @@ const CombinedAvailabilityForm = ({ isEditing, currentAvailability, onChange, on
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await onSubmit(currentAvailability);
+      const formattedAvailability = {
+        _id: currentAvailability._id,
+        date: moment(currentAvailability.startDate).toISOString(),
+        start: moment(`${currentAvailability.startDate}T${currentAvailability.start}`).toISOString(),
+        end: moment(`${currentAvailability.startDate}T${currentAvailability.end}`).toISOString()
+      };
+      await onSubmit(formattedAvailability);
       toast.success(`Availability ${isEditing ? 'updated' : 'added'} successfully`);
     } catch (error) {
       toast.error(error.message);
     }
   };
-
+  
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-4">
         <label className="block text-white text-sm font-bold mb-2" htmlFor="blockType">
           Block Type
-          <span className="text-gray-400 text-xs"> (Days you are not available)</span>
+          <span className="text-gray-400 text-xs"> (Days or hours you are not available)</span>
         </label>
         <select
           name="blockType"
@@ -54,7 +61,8 @@ const CombinedAvailabilityForm = ({ isEditing, currentAvailability, onChange, on
           className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
         >
           <option value="none">None</option>
-          <option value="block">Block Off Days</option>
+          <option value="block-hours">Block Off Hours</option>
+          <option value="block-days">Block Off Days</option>
         </select>
       </div>
 
@@ -126,7 +134,7 @@ const CombinedAvailabilityForm = ({ isEditing, currentAvailability, onChange, on
         />
       </div>
 
-      {blockType === 'block' && (
+      {blockType === 'block-hours' && (
         <div className="mb-4">
           <label className="block text-white text-sm font-bold mb-2" htmlFor="reason">Reason</label>
           <input
@@ -156,7 +164,6 @@ const CombinedAvailabilityForm = ({ isEditing, currentAvailability, onChange, on
             <option value="1">1 hour</option>
             <option value="2">2 hours</option>
             <option value="3">3 hours</option>
-            {/* Add more intervals as needed */}
           </select>
         </div>
       )}
@@ -164,7 +171,7 @@ const CombinedAvailabilityForm = ({ isEditing, currentAvailability, onChange, on
       <div className="flex items-center justify-between">
         <button
           type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          className="bg-light-blue hover:bg-blue text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
         >
           {isEditing ? 'Update' : 'Add'} Availability
         </button>

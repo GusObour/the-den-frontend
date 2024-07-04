@@ -14,7 +14,7 @@ const AdminStats = () => {
     earningsToday: 0,
     totalEarnings: 0,
   });
-  const service = new AppointmentService(process.env.REACT_APP_API_BASE_URL, localStorage.getItem('token'));
+  const service = new AppointmentService();
 
 
   useEffect(() => {
@@ -29,32 +29,70 @@ const AdminStats = () => {
 
     fetchAppointments();
     const intervalId = setInterval(fetchAppointments, 60000);
+
     return () => clearInterval(intervalId);
   }, [auth.user]);
 
-  const handleComplete = async (appointmentId) => {
-    const service = new AppointmentService(process.env.REACT_APP_API_BASE_URL, localStorage.getItem('token'));
-    try {
-      await service.completeAppointment(appointmentId);
-      toast.success('Appointment completed successfully');
-      setUpcomingAppointments(prevAppointments => prevAppointments.map(appointment =>
-        appointment.id === appointmentId ? { ...appointment, status: 'Completed' } : appointment
-      ));
-    } catch (error) {
-      toast.error('Failed to complete appointment');
-    }
-  };
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [completedToday, canceledToday, earningsToday, totalEarnings] = await Promise.all([
+          service.getCompletedAppointments(),
+          service.getTodaysCanceledAppointments(),
+          service.getTodaysEarnings(),
+          service.getTotalWeekEarnings(),
+        ]);
 
-  const handleDelete = async (appointmentId) => {
-    const service = new AppointmentService(process.env.REACT_APP_API_BASE_URL, localStorage.getItem('token'));
+        setStats({
+          completedToday,
+          canceledToday,
+          earningsToday,
+          totalEarnings,
+        });
+      } catch (error) {
+        console.warn('Failed to fetch stats:', error);
+      }
+    };
+
+    fetchStats();
+    const intervalId = setInterval(fetchStats, 60000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+
+  async function handleCompleteAppointment(id) {
     try {
-      await service.deleteAppointment(appointmentId);
-      toast.success('Appointment canceled successfully');
-      setUpcomingAppointments(prevAppointments => prevAppointments.filter(appointment => appointment.id !== appointmentId));
+      const results = await service.completeAppointment(id, auth.user._id);
+  
+      if (results.success) {
+        const updatedAppointments = upcomingAppointments.map((appointment) =>
+          appointment._id === id ? { ...appointment, status: "Completed" } : appointment
+        );
+        setUpcomingAppointments(updatedAppointments);
+        toast.success("Appointment completed successfully");
+      } else {
+        console.warn(results.message);
+      }
     } catch (error) {
-      toast.error('Failed to cancel appointment');
+      console.warn('Failed to complete appointment:', error);
     }
-  };
+  }
+
+  async function handleDeleteAppointment(id) {
+    try {
+      const results = await service.cancelAppointment(id, auth.user._id, auth.user.admin);
+  
+      if (results.success) {
+        setUpcomingAppointments(upcomingAppointments.filter((appointment) => appointment._id !== id));
+        toast.success("Appointment canceled successfully");
+      } else {
+        console.warn(results.message);
+      }
+    } catch (error) {
+      console.warn('Failed to delete appointment:', error);
+    }
+  }
 
   const fetchStats = async () => {
     try {
@@ -92,8 +130,8 @@ const AdminStats = () => {
             <AppointmentCard
               key={appointment._id}
               appointment={appointment}
-              onComplete={() => handleComplete(appointment._id)}
-              onCancel={() => handleDelete(appointment._id)}
+              onComplete={() => handleCompleteAppointment(appointment._id)}
+              onCancel={() => handleDeleteAppointment(appointment._id)}
             />
           ))}
         </div>

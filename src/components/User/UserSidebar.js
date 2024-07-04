@@ -4,7 +4,7 @@ import { FaUser, FaCalendarAlt, FaCog, FaSignOutAlt, FaBars, FaTimes } from 'rea
 import { AuthContext } from '../../context/AuthContext';
 
 const UserSidebar = () => {
-  const { auth } = useContext(AuthContext);
+  const { auth, logout } = useContext(AuthContext);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -36,7 +36,7 @@ const UserSidebar = () => {
               </Link>
             </li>
             <li className="mt-8">
-              <Link to="/logout" className="flex items-center text-red-500">
+              <Link onClick={logout} className="flex items-center text-red-500">
                 <FaSignOutAlt className="mr-3" /> Logout
               </Link>
             </li>

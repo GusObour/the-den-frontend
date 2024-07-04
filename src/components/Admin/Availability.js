@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { toast } from 'react-toastify';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaBan, FaUnlock } from 'react-icons/fa';
 import Modal from 'react-modal';
 import { AuthContext } from '../../context/AuthContext';
 import AvailabilityList from './AvailabilityList';
@@ -12,6 +12,7 @@ Modal.setAppElement('#root');
 const Availability = () => {
   const { auth } = useContext(AuthContext);
   const [availabilities, setAvailabilities] = useState([]);
+  const [selectedAvailabilities, setSelectedAvailabilities] = useState([]);
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentAvailability, setCurrentAvailability] = useState({
@@ -61,6 +62,33 @@ const Availability = () => {
     }
   };
 
+  const handleBlockAvailabilities = async () => {
+    try {
+      const response = await AvailabilityService.blockAvailabilities(selectedAvailabilities);
+      setAvailabilities((prev) =>
+        prev.map((item) => (selectedAvailabilities.includes(item._id) ? { ...item, blocked: true, locked: true } : item))
+      );
+      setSelectedAvailabilities([]);
+      toast.success(response.message);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleUnblockAvailabilities = async () => {
+    try {
+      const response = await AvailabilityService.unBlockAvailabilities(selectedAvailabilities);
+      setAvailabilities((prev) =>
+        prev.map((item) => (selectedAvailabilities.includes(item._id) ? { ...item, blocked: false, locked: false } : item))
+      );
+      setSelectedAvailabilities([]);
+      toast.success(response.message);
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+
   const openEditModal = (availability) => {
     setIsEditing(true);
     setCurrentAvailability({
@@ -94,15 +122,35 @@ const Availability = () => {
     <div className="bg-gray-800 p-6 rounded-lg shadow-lg text-white min-h-screen">
       <h2 className="text-3xl font-bold mb-6">Manage Availability</h2>
       <div className="flex flex-col sm:flex-row sm:space-x-4 mb-6">
-        <button
+        {/* <button
           onClick={openAddModal}
           className="bg-blue-500 flex items-center justify-center text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200"
         >
           <FaPlus className="mr-2" /> Add Availability
+        </button> */}
+        <button
+          onClick={handleBlockAvailabilities}
+          disabled={selectedAvailabilities.length === 0}
+          className={`${
+            selectedAvailabilities.length > 0 ? 'bg-red-500 hover:bg-red-600' : 'bg-red-300 cursor-not-allowed'
+          } flex items-center justify-center text-white py-2 px-4 rounded transition duration-200`}
+        >
+          <FaBan className="mr-2" /> Block Selected
+        </button>
+        <button
+          onClick={handleUnblockAvailabilities}
+          disabled={selectedAvailabilities.length === 0}
+          className={`${
+            selectedAvailabilities.length > 0 ? 'bg-green-500 hover:bg-green-600' : 'bg-green-300 cursor-not-allowed'
+          } flex items-center justify-center text-white py-2 px-4 rounded transition duration-200`}
+        >
+          <FaUnlock className="mr-2" /> Unblock Selected
         </button>
       </div>
       <AvailabilityList
         availabilities={availabilities}
+        selectedAvailabilities={selectedAvailabilities}
+        setSelectedAvailabilities={setSelectedAvailabilities}
         onEdit={openEditModal}
         onDelete={handleDeleteAvailability}
       />

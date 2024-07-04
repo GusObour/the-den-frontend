@@ -1,109 +1,117 @@
 import { toast } from 'react-toastify';
+import api from '../context/AxiosInterceptors';
 
 class BookingService {
-    constructor() {
-        this.socket = null;
-        this.reconnectInterval = 5000;
-        this.reconnectTimeout = null;
-        this.onMessageCallback = null;
-    }
+  constructor() {
+    this.socket = null;
+    this.reconnectInterval = 5000;
+    this.reconnectTimeout = null;
+    this.onMessageCallback = null;
+  }
 
-    async fetchServices() {
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/services`);
-            const services = await response.json();
-            return services;
-        } catch (error) {
-            console.error('Error fetching services:', error);
-            return [];
-        }
+  async fetchServices() {
+    try {
+      const response = await api.get(`/services`);
+      return response.data;
+    } catch (error) {
+      console.warn('Error fetching services:', error);
+      return [];
     }
+  }
 
-    async fetchBarbers() {
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/barbers`);
-            const barbers = await response.json();
-            return barbers;
-        } catch (error) {
-            console.error('Error fetching barbers:', error);
-            return [];
-        }
+  async fetchBarbers() {
+    try {
+      const response = await api.get(`/barbers`);
+      return response.data;
+    } catch (error) {
+      console.warn('Error fetching barbers:', error);
+      return [];
     }
+  }
 
-    async fetchAvailability(barberId, date) {
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/availability?barberId=${barberId}&date=${date}`);
-            const availability = await response.json();
-            return availability;
-        } catch (error) {
-            console.error('Error fetching availability:', error);
-            return [];
-        }
+  async fetchAvailabilityDates(selectedBarberId){
+    try {
+      const response = await api.get(`/availability/dates`, { params: { barberId: selectedBarberId } });
+      return response.data;
+    } catch (error) {
+      console.warn('Error fetching availability dates:', error);
+      return [];
     }
+  }
 
-    connectSocket(onMessageCallback) {
-        this.onMessageCallback = onMessageCallback;
-        this.socket = new WebSocket('ws://localhost:5000');
-        this.socket.onmessage = (message) => {
-            const data = JSON.parse(message.data);
-            onMessageCallback(data);
-        };
-        this.socket.onclose = () => {
-            console.warn('WebSocket connection closed, attempting to reconnect...');
-            this.reconnectSocket();
-        };
-        this.socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            this.socket.close();
-        };
+  async fetchAvailability(barberId, date, userId) {
+    try {
+      const response = await api.get(`/availability`, { params: { barberId, date, userId } });
+      return response.data;
+    } catch (error) {
+      console.warn('Error fetching availability:', error);
+      return [];
     }
+  }
 
-    reconnectSocket() {
-        if (this.reconnectTimeout) {
-            clearTimeout(this.reconnectTimeout);
-        }
-        this.reconnectTimeout = setTimeout(() => {
-            this.connectSocket(this.onMessageCallback);
-        }, this.reconnectInterval);
+  connectSocket(onMessageCallback) {
+    this.onMessageCallback = onMessageCallback;
+    console.log('Connecting to WebSocket...', `${process.env.REACT_APP_WEBSOCKET_URL}`);
+    this.socket = new WebSocket(`${process.env.REACT_APP_WEBSOCKET_URL}`);
+    
+    this.socket.onmessage = (message) => {
+      const data = JSON.parse(message.data);
+      onMessageCallback(data);
+    };
+    
+    this.socket.onclose = () => {
+      console.warn('WebSocket connection closed, attempting to reconnect...');
+      this.reconnectSocket();
+    };
+    
+    this.socket.onerror = (error) => {
+      console.warn('WebSocket error occurred:', error);
+      this.socket.close();
+    };
+  }
+
+  reconnectSocket() {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
     }
+    this.reconnectTimeout = setTimeout(() => {
+      this.connectSocket(this.onMessageCallback);
+    }, this.reconnectInterval);
+  }
 
-    disconnectSocket() {
-        if (this.socket) {
-            this.socket.close();
-        }
-        if (this.reconnectTimeout) {
-            clearTimeout(this.reconnectTimeout);
-        }
+  disconnectSocket() {
+    if (this.socket) {
+      this.socket.close();
     }
-
-    lockAppointment(appointmentData) {
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            this.socket.send(JSON.stringify({
-                action: 'lock',
-                appointmentData
-            }));
-        } else {
-            console.error('WebSocket connection is not established.');
-        }
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
     }
+  }
 
-    async bookAppointment(appointmentData) {
-        try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/book/appointment`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(appointmentData)
-            });
-
-            return response.json();
-        } catch (e) {
-            console.error('Error booking appointment:', e);
-            toast.error('Failed to book appointment');
-            return null;
-        }
+  lockAppointment(appointmentData) {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({
+        action: 'lock',
+        appointmentData
+      }));
+    } else {
+      throw new Error('WebSocket connection is not established.');
     }
+  }
+
+  setGoogleTokens(tokens) {
+    this.googleTokens = tokens;
+  }
+
+  async completeBooking(appointmentData, googleTokens) {
+    try {
+      const response = await api.post('/google/complete-booking', { appointmentData, tokens: googleTokens });
+      return response.data;
+    } catch (error) {
+      console.error('Error completing booking:', error);
+      throw error;
+    }
+  }
 }
 
 export default new BookingService();

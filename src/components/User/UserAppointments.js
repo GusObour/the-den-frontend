@@ -17,6 +17,7 @@ const UserAppointments = () => {
           toast.success('You have no appointments');
         }
         setAppointments(appointments);
+        console.log(appointments);
       } catch (error) {
         toast.error('Failed to fetch appointments');
       }
@@ -28,8 +29,7 @@ const UserAppointments = () => {
   const handleCancelAppointment = async (appointmentId) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
-        const response = await service.cancelAppointment(appointmentId, auth.user._id, auth.user.admin);
-        const results = response.data;
+        const results = await service.cancelAppointment(appointmentId, auth.user._id, auth.user.admin);
         console.log(results);
   
         if (results.success) {

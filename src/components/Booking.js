@@ -4,6 +4,18 @@ import 'react-toastify/dist/ReactToastify.css';
 import BookingService from '../services/BookingService';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import BookingSuccessModal from './BookingSuccessModal';
+import api from '../context/AxiosInterceptors';
+
+
+const formatDateTime = (dateTime, options) => {
+    try {
+        return new Intl.DateTimeFormat('en-US', options).format(new Date(dateTime));
+    } catch (error) {
+        console.error('Error formatting dateTime:', dateTime, error);
+        return 'Invalid time';
+    }
+};
 
 const Booking = () => {
     const { auth } = useContext(AuthContext);
@@ -12,10 +24,13 @@ const Booking = () => {
     const [barbers, setBarbers] = useState([]);
     const [selectedService, setSelectedService] = useState(null);
     const [selectedBarber, setSelectedBarber] = useState(null);
+    const [availableDates, setAvailableDates] = useState([]);
     const [selectedDate, setSelectedDate] = useState(null);
     const [timeSlots, setTimeSlots] = useState([]);
     const [selectedTime, setSelectedTime] = useState(null);
     const [currentStep, setCurrentStep] = useState(1);
+    const [showBookingSuccess, setShowBookingSuccess] = useState(false);
+    const [appointmentData, setAppointmentData] = useState(null);
 
     useEffect(() => {
         const fetchServicesAndBarbers = async () => {
@@ -45,10 +60,10 @@ const Booking = () => {
             setSelectedDate(null);
             setSelectedTime(null);
         } else if (data.action === 'lock_limit_reached') {
-            const lockedSlots = data.lockedSlots.map(slot =>
-                `Date: ${new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.date))} Time: ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.start))} to ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.end))}`
-            ).join(', ');
-            toast.error(`Lock limit reached. Please try again later or select one of the already locked time slots. Locked slots: ${lockedSlots}`);
+            // const lockedSlots = data.lockedSlots.map(slot =>
+            //     `Date: ${new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.date))} Time: ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.start))} to ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.end))}`
+            // ).join(', ');
+            toast.error(`Lock limit reached. Please try again later.`);
         }
     };
 
@@ -60,17 +75,40 @@ const Booking = () => {
         setCurrentStep(2);
     };
 
-    const handleBarberSelect = (barber) => {
+    const handleBarberSelect = async (barber) => {
         setSelectedBarber(barber);
         setSelectedDate(null);
         setSelectedTime(null);
-        setCurrentStep(3);
+
+        if (barber && barber.id) {
+            const fetchedDates = await BookingService.fetchAvailabilityDates(barber.id);
+            if (fetchedDates.length === 0) {
+                toast.error('No availability  for the selected barber');
+                setCurrentStep(1);
+                setSelectedService(null);
+                setSelectedBarber(null);
+                setSelectedDate(null);
+                setSelectedTime(null);
+            } else {
+                console.log(fetchedDates);
+                setAvailableDates(fetchedDates);
+                setCurrentStep(3);
+            }
+        }
     };
+
 
     const handleDateSelect = async (date) => {
         setSelectedDate(date);
         if (selectedBarber && selectedBarber.id) {
-            const fetchedTimeSlots = await BookingService.fetchAvailability(selectedBarber.id, date);
+            if (!auth.isLoggedIn) {
+                toast.error('You must be logged in to continue booking an appointment');
+                setTimeout(() => {
+                    navigate('/login');
+                }, 2000);
+                return;
+            }
+            const fetchedTimeSlots = await BookingService.fetchAvailability(selectedBarber.id, date, auth.user._id);
             setTimeSlots(fetchedTimeSlots);
             setCurrentStep(4);
         } else {
@@ -81,13 +119,13 @@ const Booking = () => {
     const handleTimeSelect = (time) => {
         setSelectedTime(time);
 
-        if (!auth.isLoggedIn) {
-            toast.error('You must be logged in to book an appointment');
-            setTimeout(() => {
-                navigate('/login');
-            }, 2000);
-            return;
-        }
+        // if (!auth.isLoggedIn) {
+        //     toast.error('You must be logged in to book an appointment');
+        //     setTimeout(() => {
+        //         navigate('/login');
+        //     }, 2000);
+        //     return;
+        // }
 
         if (selectedBarber && selectedDate && time) {
             BookingService.lockAppointment({
@@ -112,18 +150,23 @@ const Booking = () => {
             end: selectedTime.end
         };
 
-        const response = await BookingService.bookAppointment(appointmentData);
-        if (response.success) {
-            toast.success(`${response.message}`);
-            setCurrentStep(1);
-            setSelectedService(null);
-            setSelectedBarber(null);
-            setSelectedDate(null);
-            setSelectedTime(null);
-        } else {
-            toast.error('Failed to book appointment.');
-        }
+        const state = JSON.stringify(appointmentData);
+        window.location.href = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
     };
+
+    // useEffect(() => {
+    //     const searchParams = new URLSearchParams(window.location.search);
+    //     const tokens = searchParams.get('tokens');
+    //     const state = searchParams.get('state');
+
+    //     if (tokens && state) {
+    //         setAppointmentData({
+    //             tokens: JSON.parse(tokens),
+    //             appointmentData: JSON.parse(state)
+    //         });
+    //         setShowBookingSuccess(true);
+    //     }
+    // }, []);
 
     const handleNext = () => {
         setCurrentStep((prevStep) => prevStep + 1);
@@ -172,10 +215,10 @@ const Booking = () => {
                                         onClick={() => handleBarberSelect(barber)}
                                     >
                                         <div>
-                                            <img src={barber.headShot} alt={barber.fullName} className="w-full h-48 object-cover rounded-lg" />
+                                            <img src={barber.headShot || `${process.env.REACT_APP_API_BASE_URL}/default-headShot.png`} alt={barber.fullName} className="w-full h-48 object-cover rounded-lg" />
                                             <h3 className="font-semibold text-black dark:text-light-gray">{barber.fullName}</h3>
                                             <p className="text-dark-gray dark:text-uranian-blue">{barber.email}</p>
-                                            <p className="text-dark-gray dark:text-uranian-blue">{barber.phoneNumber}</p>
+                                            {/* <p className="text-dark-gray dark:text-uranian-blue">{barber.phoneNumber}</p> */}
                                         </div>
                                     </div>
                                 ))}
@@ -184,38 +227,42 @@ const Booking = () => {
                         </div>
                     )}
                     {currentStep === 3 && (
-                        <div>
-                            <h2 className="text-2xl font-bold mb-4 text-black dark:text-light-gray">Choose a date</h2>
-                            <div className="grid grid-cols-7 gap-4 rounded-t overflow-hidden text-center">
-                                {Array.from({ length: 21 }, (_, i) => {
-                                    const date = new Date();
-                                    date.setDate(date.getDate() + i);
-                                    const dateString = date.toISOString().split('T')[0];
+                        <div className="p-6 rounded-lg">
+                            <h2 className="text-3xl font-bold mb-6 text-black dark:text-light-gray">Choose a date</h2>
+                            <div className="grid grid-cols-7 gap-4">
+                                {availableDates.map((dateString) => {
+                                    const date = new Date(dateString);
                                     return (
                                         <div
                                             key={dateString}
-                                            className={`date-selection text-center cursor-pointer ${selectedDate === dateString ? 'bg-blue text-white' : 'bg-white text-black dark:bg-dark-gray dark:text-light-gray'}`}
+                                            className={`date-selection cursor-pointer rounded-lg transition-colors duration-300 ${selectedDate === dateString ? 'bg-blue text-white' : 'bg-white text-black dark:bg-dark-gray dark:text-light-gray'}`}
                                             onClick={() => handleDateSelect(dateString)}
                                         >
-                                            <div className="flex flex-col justify-center p-2">
-                                                <div className="bg-light-blue text-black py-1">
-                                                    {date.toLocaleString('en-US', { month: 'short' })}
+                                            <div className="flex flex-col justify-center items-center p-4 h-full">
+                                                <div className={`py-1 px-2 rounded-full ${selectedDate === dateString ? 'bg-uranian-blue text-black' : 'bg-light-blue text-black'}`}>
+                                                    {formatDateTime(dateString, { month: 'short' })}
                                                 </div>
-                                                <div className="pt-1">
-                                                    <span className="text-4xl font-bold">{date.getDate()}</span>
+                                                <div className="pt-2 text-4xl font-bold">
+                                                    {formatDateTime(date, { day: '2-digit', timeZone: 'UTC', hour12: true })}
                                                 </div>
-                                                <div className="flex justify-between py-2">
-                                                    <span className="text-xs font-bold">{date.toLocaleString('en-US', { weekday: 'short' })}</span>
-                                                    <span className="text-xs font-bold">{date.getFullYear()}</span>
+                                                <div className="pt-2 flex flex-col items-center">
+                                                    <span className="text-sm font-bold">{formatDateTime(dateString, { weekday: 'short' })}</span>
+                                                    <span className="text-sm font-bold">{formatDateTime(date, { year: 'numeric', timeZone: 'UTC', hour12: true })}</span>
                                                 </div>
                                             </div>
                                         </div>
                                     );
                                 })}
                             </div>
-                            <button className="mt-4 bg-gray-500 text-white py-2 px-4 rounded-lg" onClick={handleBack}>Back</button>
+                            <button
+                                className="mt-6 bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600 transition duration-200"
+                                onClick={() => setCurrentStep(2)}
+                            >
+                                Back
+                            </button>
                         </div>
                     )}
+
                     {currentStep === 4 && (
                         <div>
                             <h2 className="text-2xl font-bold mb-4 text-black dark:text-light-gray">Choose a time</h2>
@@ -287,6 +334,13 @@ const Booking = () => {
                     {selectedService && selectedBarber && selectedDate && selectedTime && (
                         <button className="mt-4 bg-black text-white py-2 px-4 rounded-lg w-full" onClick={handleBooking}>Book Appointment</button>
                     )}
+                    {/* {showBookingSuccess && (
+                        <BookingSuccessModal
+                            tokens={appointmentData.tokens}
+                            appointmentData={appointmentData.appointmentData}
+                            onClose={() => setShowBookingSuccess(false)}
+                        />
+                    )} */}
                 </div>
             </div>
         </div>

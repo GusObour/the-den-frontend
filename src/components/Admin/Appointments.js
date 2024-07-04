@@ -20,6 +20,7 @@ const Appointments = () => {
           auth.user.admin
         );
         setAppointments(fetchAppointments);
+        console.log(fetchAppointments);
       } catch (error) {
         toast.error("Failed to fetch appointments");
       }
@@ -31,8 +32,7 @@ const Appointments = () => {
 
   async function handleCompleteAppointment(id) {
     try {
-      const response = await service.completeAppointment(id, auth.user._id);
-      const results = response.data;
+      const results = await service.completeAppointment(id, auth.user._id);
   
       if (results.success) {
         const updatedAppointments = appointments.map((appointment) =>
@@ -51,8 +51,7 @@ const Appointments = () => {
 
   async function handleDeleteAppointment(id) {
     try {
-      const response = await service.cancelAppointment(id, auth.user._id, auth.user.admin);
-      const results = response.data;
+      const results = await service.cancelAppointment(id, auth.user._id, auth.user.admin);
   
       if (results.success) {
         setAppointments(appointments.filter((appointment) => appointment._id !== id));
