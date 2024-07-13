@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { AuthContext } from "../context/AuthContext";
 import validator from "validator";
 
@@ -56,6 +57,7 @@ const Login = () => {
 
   return (
     <div className="container mx-auto py-20 px-4">
+      <ToastContainer />
       <h1 className="text-3xl font-bold mb-8 text-center text-black-2">
         Login
       </h1>
