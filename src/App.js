@@ -9,8 +9,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import AdminDashboard from './components/AdminDashboard';
 import UserDashboard from './components/UserDashboard';
-import GoogleAuthCallback from './components/GoogleAuthCallback';
-import BookingSuccessModal from './components/BookingSuccessModal';
+import BookingResult from './components/BookingResult';
 import { AuthContextProvider } from './context/AuthContext';
 import { ToastContainer } from 'react-toastify';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -18,9 +17,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
 
 function App() {
-  const [showModal, setShowModal] = useState(false);
-
-  const handleModalClose = () => setShowModal(false);
 
   return (
     <Router>
@@ -35,8 +31,7 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/location" element={<LocationAndAbout />} />
-              <Route path="/google/auth/callback" element={<GoogleAuthCallback />} />
-              <Route path="/bookingsuccess" element={<BookingSuccessModal onClose={handleModalClose} />} />
+              <Route path="/booking/result" element={<BookingResult />} />
               <Route path="/" element={
                 <>
                   <section id="about-section">

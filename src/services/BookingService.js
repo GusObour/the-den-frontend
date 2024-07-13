@@ -69,6 +69,15 @@ class BookingService {
       this.socket.close();
     };
   }
+  
+  checkSocketStatus() {
+    if (this.socket) {
+      return this.socket.readyState;
+    } else {
+      console.log('WebSocket is not initialized.');
+      return WebSocket.CLOSED;
+    }
+  }
 
   reconnectSocket() {
     if (this.reconnectTimeout) {
@@ -99,9 +108,6 @@ class BookingService {
     }
   }
 
-  setGoogleTokens(tokens) {
-    this.googleTokens = tokens;
-  }
 
   async completeBooking(appointmentData, googleTokens) {
     try {

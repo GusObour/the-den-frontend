@@ -4,7 +4,6 @@ import 'react-toastify/dist/ReactToastify.css';
 import BookingService from '../services/BookingService';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import BookingSuccessModal from './BookingSuccessModal';
 import api from '../context/AxiosInterceptors';
 
 
@@ -118,55 +117,50 @@ const Booking = () => {
 
     const handleTimeSelect = (time) => {
         setSelectedTime(time);
-
-        // if (!auth.isLoggedIn) {
-        //     toast.error('You must be logged in to book an appointment');
-        //     setTimeout(() => {
-        //         navigate('/login');
-        //     }, 2000);
-        //     return;
-        // }
-
+      
         if (selectedBarber && selectedDate && time) {
-            BookingService.lockAppointment({
-                barberId: selectedBarber.id,
-                date: selectedDate,
-                start: time.start,
-                end: time.end,
-                userId: auth.user._id
-            });
+          const appointmentData = {
+            barberId: selectedBarber.id,
+            date: selectedDate,
+            start: time.start,
+            end: time.end,
+            userId: auth.user._id
+          };
+      
+          const socketStatus = BookingService.checkSocketStatus();
+      
+          if (socketStatus === WebSocket.OPEN) {
+            BookingService.lockAppointment(appointmentData);
+          } else {
+            toast.error('WebSocket is not ready. Please try again in a moment.');
+            // Optionally, you can attempt to reconnect or provide a visual indicator to the user
+            BookingService.reconnectSocket();
+          }
         } else {
-            toast.error('Please select a service, barber, date, and time.');
+          toast.error('Please select a service, barber, date, and time.');
         }
-    };
-
+      };
     const handleBooking = async () => {
         const appointmentData = {
-            userId: auth.user._id,
-            barberId: selectedBarber.id,
-            serviceId: selectedService._id,
-            date: selectedDate,
-            start: selectedTime.start,
-            end: selectedTime.end
+          userId: auth.user._id,
+          barberId: selectedBarber.id,
+          serviceId: selectedService._id,
+          date: selectedDate,
+          start: selectedTime.start,
+          end: selectedTime.end
         };
-
+      
         const state = JSON.stringify(appointmentData);
-        window.location.href = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
-    };
-
-    // useEffect(() => {
-    //     const searchParams = new URLSearchParams(window.location.search);
-    //     const tokens = searchParams.get('tokens');
-    //     const state = searchParams.get('state');
-
-    //     if (tokens && state) {
-    //         setAppointmentData({
-    //             tokens: JSON.parse(tokens),
-    //             appointmentData: JSON.parse(state)
-    //         });
-    //         setShowBookingSuccess(true);
-    //     }
-    // }, []);
+        const authUrl = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
+      
+        try {
+          // Redirect to OAuth URL
+          window.location.href = authUrl;
+        } catch (error) {
+          console.error('Error during booking:', error);
+          toast.error('Error during booking. Please try again.');
+        }
+      };
 
     const handleNext = () => {
         setCurrentStep((prevStep) => prevStep + 1);
@@ -334,13 +328,6 @@ const Booking = () => {
                     {selectedService && selectedBarber && selectedDate && selectedTime && (
                         <button className="mt-4 bg-black text-white py-2 px-4 rounded-lg w-full" onClick={handleBooking}>Book Appointment</button>
                     )}
-                    {/* {showBookingSuccess && (
-                        <BookingSuccessModal
-                            tokens={appointmentData.tokens}
-                            appointmentData={appointmentData.appointmentData}
-                            onClose={() => setShowBookingSuccess(false)}
-                        />
-                    )} */}
                 </div>
             </div>
         </div>
