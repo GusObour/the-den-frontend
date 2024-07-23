@@ -59,9 +59,6 @@ const Booking = () => {
             setSelectedDate(null);
             setSelectedTime(null);
         } else if (data.action === 'lock_limit_reached') {
-            // const lockedSlots = data.lockedSlots.map(slot =>
-            //     `Date: ${new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.date))} Time: ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.start))} to ${new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC', hour12: true }).format(new Date(slot.end))}`
-            // ).join(', ');
             toast.error(`Lock limit reached. Please try again later.`);
         }
     };
@@ -89,7 +86,6 @@ const Booking = () => {
                 setSelectedDate(null);
                 setSelectedTime(null);
             } else {
-                console.log(fetchedDates);
                 setAvailableDates(fetchedDates);
                 setCurrentStep(3);
             }
@@ -141,6 +137,7 @@ const Booking = () => {
         }
       };
     const handleBooking = async () => {
+        try {
         const appointmentData = {
           userId: auth.user._id,
           barberId: selectedBarber.id,
@@ -150,12 +147,22 @@ const Booking = () => {
           end: selectedTime.end
         };
       
-        const state = JSON.stringify(appointmentData);
-        const authUrl = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
-      
-        try {
-          // Redirect to OAuth URL
-          window.location.href = authUrl;
+        // by passing the google calendar auth for right now. going directly to the appointment creation
+        // const state = JSON.stringify(appointmentData);
+        // const authUrl = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
+
+        const  response = await BookingService.completeBooking(appointmentData);
+        if(response.success){
+            toast.success(response.message);
+            setCurrentStep(1);
+            setSelectedService(null);
+            setSelectedBarber(null);
+            setSelectedDate(null);
+            setSelectedTime(null);
+        }else{
+            toast.error(`${response.message}`);
+        }
+
         } catch (error) {
           console.error('Error during booking:', error);
           toast.error('Error during booking. Please try again.');
@@ -171,7 +178,7 @@ const Booking = () => {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-black-3 p-4">
+        <div className="container mx-auto min-h-screen flex flex-col bg-gray-100 dark:bg-black-3 p-4">
             <ToastContainer />
             <div className="flex-1 flex flex-col md:flex-row">
                 <div className="flex-1">

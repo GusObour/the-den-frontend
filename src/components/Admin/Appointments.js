@@ -20,7 +20,6 @@ const Appointments = () => {
           auth.user.admin
         );
         setAppointments(fetchAppointments);
-        console.log(fetchAppointments);
       } catch (error) {
         toast.error("Failed to fetch appointments");
       }

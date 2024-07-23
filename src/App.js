@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import LocationAndAbout from './components/LocationAndAbout';
 import Booking from './components/Booking';
-import InstagramEmbed from './components/InstagramEmbed';
+// import InstagramEmbed from './components/InstagramEmbed'; // will be added in a later probably switched out with a custom gallery
 import Footer from './components/Footer';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -40,7 +40,7 @@ function App() {
                   <section id="booking-section">
                     <Booking />
                   </section>
-                  <InstagramEmbed />
+                  {/* <InstagramEmbed /> */}
                 </>
               } />
             </Routes>

@@ -54,7 +54,8 @@ const InstagramEmbed = () => {
                         <a href="https://www.instagram.com/rodthebarber956/?utm_source=ig_embed&amp;utm_campaign=loading" style={{ color: '#c9c8cd', fontFamily: 'Arial,sans-serif', fontSize: '14px', fontStyle: 'normal', fontWeight: 'normal', lineHeight: '17px' }} target="_blank" className="dark:text-uranian-blue">Miguel Rodriguez</a> (@<a href="https://www.instagram.com/rodthebarber956/?utm_source=ig_embed&amp;utm_campaign=loading" style={{ color: '#c9c8cd', fontFamily: 'Arial,sans-serif', fontSize: '14px', fontStyle: 'normal', fontWeight: 'normal', lineHeight: '17px' }} target="_blank" className="dark:text-uranian-blue">rodthebarber956</a>) • Instagram photos and videos
                     </p>
                 </div>
-            </blockquote>
+            </blockquote> 
+
             <script async src="//www.instagram.com/embed.js"></script>
         </div>
     );

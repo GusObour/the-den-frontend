@@ -12,7 +12,6 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log("Auth state on Login mount:", auth);
     if (auth.isLoggedIn) {
       if (auth.user.admin) {
         navigate("/admin");

@@ -51,7 +51,6 @@ class BookingService {
 
   connectSocket(onMessageCallback) {
     this.onMessageCallback = onMessageCallback;
-    console.log('Connecting to WebSocket...', `${process.env.REACT_APP_WEBSOCKET_URL}`);
     this.socket = new WebSocket(`${process.env.REACT_APP_WEBSOCKET_URL}`);
     
     this.socket.onmessage = (message) => {
@@ -69,12 +68,11 @@ class BookingService {
       this.socket.close();
     };
   }
-  
+
   checkSocketStatus() {
     if (this.socket) {
       return this.socket.readyState;
     } else {
-      console.log('WebSocket is not initialized.');
       return WebSocket.CLOSED;
     }
   }
@@ -109,9 +107,9 @@ class BookingService {
   }
 
 
-  async completeBooking(appointmentData, googleTokens) {
+  async completeBooking(appointmentData) {
     try {
-      const response = await api.post('/google/complete-booking', { appointmentData, tokens: googleTokens });
+      const response = await api.post('/user/complete-appointment', { appointmentData });
       return response.data;
     } catch (error) {
       console.error('Error completing booking:', error);
