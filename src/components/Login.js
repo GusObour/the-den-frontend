@@ -99,6 +99,12 @@ const Login = () => {
             Register
           </Link>
         </p>
+        <p className="text-center mt-4">
+          Forgot Your Password?{' '}
+          <Link to="/request-reset" className="text-blue-500 hover:underline">
+            Reset Password
+          </Link>
+        </p>
       </form>
     </div>
   );

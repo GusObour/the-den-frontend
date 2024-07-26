@@ -30,7 +30,7 @@ const AuthContextProvider = ({ children }) => {
         navigate('/login');
       }
     } else {
-      if (!['/login', '/register', '/'].includes(location.pathname)) {
+      if (!['/login', '/register', '/','/request-reset','/reset-password'].includes(location.pathname)) {
         navigate('/login');
       }
     }

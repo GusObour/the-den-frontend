@@ -14,10 +14,6 @@ const countryCodesList = countryCodes.customList(
 const Register = () => {
   const { auth } = useContext(AuthContext);
 
-  useEffect(() => {
-    console.log(countryCodesList);
-  });
-
   const [user, setUser] = useState({
     fullName: "",
     email: "",
