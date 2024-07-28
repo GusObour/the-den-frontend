@@ -22,7 +22,7 @@ const AuthContextProvider = ({ children }) => {
         if (decoded.exp * 1000 > Date.now()) {
           setAuth({ isLoggedIn: true, user: decoded });
         } else {
-          refreshToken();
+          handleLogout();
         }
       } catch (e) {
         console.error('Invalid token:', e);
@@ -30,25 +30,11 @@ const AuthContextProvider = ({ children }) => {
         navigate('/login');
       }
     } else {
-      if (!['/login', '/register', '/'].includes(location.pathname)) {
+      if (!['/login', '/register', '/', '/request-reset', '/reset-password','/terms-and-privacy'].includes(location.pathname)) {
         navigate('/login');
       }
     }
   }, [navigate, location.pathname]);
-
-  const refreshToken = async () => {
-    try {
-      const response = await api.post(`/auth/refresh-token`);
-      const { token } = response.data;
-      const decoded = jwtDecode(token);
-      setAuth({ isLoggedIn: true, user: decoded });
-      localStorage.setItem('token', token);
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Refresh token failed:', error);
-      handleLogout();
-    }
-  };
 
   const login = async (credentials) => {
     try {
@@ -91,7 +77,7 @@ const AuthContextProvider = ({ children }) => {
             setModalTimer(60);
           }
           if (decoded.exp * 1000 < Date.now()) {
-            refreshToken();
+            handleLogout();
           }
         } catch (e) {
           console.error('Token decoding failed:', e);
@@ -144,15 +130,9 @@ const AuthContextProvider = ({ children }) => {
         overlayClassName="Modal__Overlay fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center"
       >
         <h2 className="text-2xl font-bold mb-6">Session Expiring</h2>
-        <p className="mb-4">Your session is about to expire. Would you like to stay logged in?</p>
-        <p className="mb-4">Time remaining: {modalTimer} seconds</p>
+        <p className="mb-4">Your session is about to expire.</p>
+        <p className="mb-4">Time remaining: {modalTimer} seconds before getting logged out</p>
         <div className="flex justify-end space-x-4">
-          <button
-            onClick={refreshToken}
-            className="bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition duration-200"
-          >
-            Stay Logged In
-          </button>
           <button
             onClick={handleLogout}
             className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600 transition duration-200"

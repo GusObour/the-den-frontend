@@ -21,8 +21,8 @@ const Navbar = () => {
                     <span className="font-bold text-xl text-black">The Den</span>
                 </Link>
                 <div className="hidden md:flex space-x-6">
-                    <ScrollLink to="about-section" smooth={true} duration={500} className="hover:text-gray-500 text-black cursor-pointer">About</ScrollLink>
-                    <ScrollLink to="booking-section" smooth={true} duration={500} className="hover:text-gray-500 text-black cursor-pointer">Booking</ScrollLink>
+                    <Link to="/#about-section" smooth={true} duration={500} className="hover:text-gray-500 text-black cursor-pointer">About</Link>
+                    <Link to="/#booking-section" smooth={true} duration={500} className="hover:text-gray-500 text-black cursor-pointer">Booking</Link>
                     {user ? (
                         <>
                             {user.admin ? (
