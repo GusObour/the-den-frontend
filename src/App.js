@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import LocationAndAbout from './components/LocationAndAbout';
 import Booking from './components/Booking';
+import TermsAndPrivacy from './components/TermsAndPrivacy';
 // import InstagramEmbed from './components/InstagramEmbed'; // will be added in a later probably switched out with a custom gallery
 import Footer from './components/Footer';
 import Login from './components/Login';
@@ -34,6 +35,7 @@ function App() {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/register" element={<Register />} />
               <Route path="/location" element={<LocationAndAbout />} />
+              <Route path="/terms-and-privacy" element={<TermsAndPrivacy />} />
               <Route path="/" element={
                 <>
                   <section id="about-section">
