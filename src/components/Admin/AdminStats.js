@@ -66,9 +66,8 @@ const AdminStats = () => {
       const results = await service.completeAppointment(id, auth.user._id);
   
       if (results.success) {
-        const updatedAppointments = upcomingAppointments.map((appointment) =>
-          appointment._id === id ? { ...appointment, status: "Completed" } : appointment
-        );
+        const updatedAppointments = upcomingAppointments.filter((appointment) => appointment._id !== id);
+
         setUpcomingAppointments(updatedAppointments);
         toast.success("Appointment completed successfully");
       } else {
