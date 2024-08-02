@@ -28,9 +28,7 @@ const Booking = () => {
     const [timeSlots, setTimeSlots] = useState([]);
     const [selectedTime, setSelectedTime] = useState(null);
     const [currentStep, setCurrentStep] = useState(1);
-    const [showBookingSuccess, setShowBookingSuccess] = useState(false);
-    const [appointmentData, setAppointmentData] = useState(null);
-
+    const [isBookingLoading, setIsBookingLoading] = useState(false);
     useEffect(() => {
         const fetchServicesAndBarbers = async () => {
             const fetchedServices = await BookingService.fetchServices();
@@ -113,61 +111,64 @@ const Booking = () => {
 
     const handleTimeSelect = (time) => {
         setSelectedTime(time);
-      
-        if (selectedBarber && selectedDate && time) {
-          const appointmentData = {
-            barberId: selectedBarber.id,
-            date: selectedDate,
-            start: time.start,
-            end: time.end,
-            userId: auth.user._id
-          };
-      
-          const socketStatus = BookingService.checkSocketStatus();
-      
-          if (socketStatus === WebSocket.OPEN) {
-            BookingService.lockAppointment(appointmentData);
-          } else {
-            toast.error('WebSocket is not ready. Please try again in a moment.');
-            // Optionally, you can attempt to reconnect or provide a visual indicator to the user
-            BookingService.reconnectSocket();
-          }
-        } else {
-          toast.error('Please select a service, barber, date, and time.');
-        }
-      };
-    const handleBooking = async () => {
-        try {
-        const appointmentData = {
-          userId: auth.user._id,
-          barberId: selectedBarber.id,
-          serviceId: selectedService._id,
-          date: selectedDate,
-          start: selectedTime.start,
-          end: selectedTime.end
-        };
-      
-        // by passing the google calendar auth for right now. going directly to the appointment creation
-        // const state = JSON.stringify(appointmentData);
-        // const authUrl = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
 
-        const  response = await BookingService.completeBooking(appointmentData);
-        if(response.success){
-            toast.success(response.message);
-            setCurrentStep(1);
-            setSelectedService(null);
-            setSelectedBarber(null);
-            setSelectedDate(null);
-            setSelectedTime(null);
-        }else{
-            toast.error(`${response.message}`);
+        if (selectedBarber && selectedDate && time) {
+            const appointmentData = {
+                barberId: selectedBarber.id,
+                date: selectedDate,
+                start: time.start,
+                end: time.end,
+                userId: auth.user._id
+            };
+
+            const socketStatus = BookingService.checkSocketStatus();
+
+            if (socketStatus === WebSocket.OPEN) {
+                BookingService.lockAppointment(appointmentData);
+            } else {
+                toast.error('WebSocket is not ready. Please try again in a moment.');
+                // Optionally, you can attempt to reconnect or provide a visual indicator to the user
+                BookingService.reconnectSocket();
+            }
+        } else {
+            toast.error('Please select a service, barber, date, and time.');
         }
+    };
+    const handleBooking = async () => {
+        setIsBookingLoading(true);
+        try {
+            const appointmentData = {
+                userId: auth.user._id,
+                barberId: selectedBarber.id,
+                serviceId: selectedService._id,
+                date: selectedDate,
+                start: selectedTime.start,
+                end: selectedTime.end
+            };
+
+            // by passing the google calendar auth for right now. going directly to the appointment creation
+            // const state = JSON.stringify(appointmentData);
+            // const authUrl = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
+
+            const response = await BookingService.completeBooking(appointmentData);
+            if (response.success) {
+                toast.success(response.message);
+                setCurrentStep(1);
+                setSelectedService(null);
+                setSelectedBarber(null);
+                setSelectedDate(null);
+                setSelectedTime(null);
+            } else {
+                toast.error(`${response.message}`);
+            }
 
         } catch (error) {
-          console.error('Error during booking:', error);
-          toast.error('Error during booking. Please try again.');
+            console.error('Error during booking:', error);
+            toast.error('Error during booking. Please try again.');
+        } finally {
+            setIsBookingLoading(false);
         }
-      };
+    };
 
     const handleNext = () => {
         setCurrentStep((prevStep) => prevStep + 1);
@@ -333,8 +334,22 @@ const Booking = () => {
                         </p>
                     )}
                     {selectedService && selectedBarber && selectedDate && selectedTime && (
-                        <button className="mt-4 bg-black text-white py-2 px-4 rounded-lg w-full" onClick={handleBooking}>Book Appointment</button>
+                        <button
+                            className="mt-4 bg-black text-white py-2 px-4 rounded-lg w-full flex items-center justify-center"
+                            onClick={handleBooking}
+                            disabled={isBookingLoading}
+                        >
+                            {isBookingLoading ? (
+                                <svg className="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                            ) : (
+                                'Book Appointment'
+                            )}
+                        </button>
                     )}
+
                 </div>
             </div>
         </div>
