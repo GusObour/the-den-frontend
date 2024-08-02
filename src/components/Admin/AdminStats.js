@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 
 const AdminStats = () => {
   const { auth } = useContext(AuthContext);
+  const [loadingStates, setLoadingStates] = useState({});
   const [upcomingAppointments, setUpcomingAppointments] = useState([]);
   const [stats, setStats] = useState({
     completedToday: 0,
@@ -62,12 +63,12 @@ const AdminStats = () => {
 
 
   async function handleCompleteAppointment(id) {
+    setLoadingStates(prevStates => ({ ...prevStates, [id]: true }));
     try {
       const results = await service.completeAppointment(id, auth.user._id);
-  
+
       if (results.success) {
         const updatedAppointments = upcomingAppointments.filter((appointment) => appointment._id !== id);
-
         setUpcomingAppointments(updatedAppointments);
         toast.success("Appointment completed successfully");
       } else {
@@ -75,13 +76,17 @@ const AdminStats = () => {
       }
     } catch (error) {
       console.warn('Failed to complete appointment:', error);
+    } finally {
+      setLoadingStates(prevStates => ({ ...prevStates, [id]: false }));
     }
   }
 
+
   async function handleDeleteAppointment(id) {
+    setLoadingStates(prevStates => ({ ...prevStates, [id]: true }));
     try {
       const results = await service.cancelAppointment(id, auth.user._id, auth.user.admin);
-  
+
       if (results.success) {
         setUpcomingAppointments(upcomingAppointments.filter((appointment) => appointment._id !== id));
         toast.success("Appointment canceled successfully");
@@ -90,8 +95,11 @@ const AdminStats = () => {
       }
     } catch (error) {
       console.warn('Failed to delete appointment:', error);
+    } finally {
+      setLoadingStates(prevStates => ({ ...prevStates, [id]: false }));
     }
   }
+
 
   const fetchStats = async () => {
     try {
@@ -131,6 +139,7 @@ const AdminStats = () => {
               appointment={appointment}
               onComplete={() => handleCompleteAppointment(appointment._id)}
               onCancel={() => handleDeleteAppointment(appointment._id)}
+              isLoading={loadingStates[appointment._id]}
             />
           ))}
         </div>
