@@ -26,16 +26,6 @@ const LocationAndAbout = () => {
             <p className="text-lg mb-4 text-black-2">114 S 4th St c, Manhattan, KS 66502</p>
             <p className="text-lg mb-6 text-black-2">Hours: Mon-Fri 10-5 • Sat 9-2</p>
           </div>
-          <div className="flex justify-center space-x-4 mb-6">
-            <a
-              href={googleMapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-blue text-white py-2 px-4 rounded hover:bg-light-blue"
-            >
-              Open in Google Maps
-            </a>
-          </div>
           <div className="w-full h-0 aspect-w-16 aspect-h-9 overflow-hidden rounded-lg">
             <iframe
               style={{ border: 0 }}
