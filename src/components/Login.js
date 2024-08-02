@@ -7,6 +7,7 @@ import validator from "validator";
 
 const Login = () => {
   const { login, auth } = useContext(AuthContext);
+  const [isLoading, setIsLoading] = useState(false);
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -34,10 +35,12 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       const validationError = validateInputs();
       if (validationError) {
         toast.error(validationError);
+        setIsLoading(false);
         return;
       }
 
@@ -51,8 +54,11 @@ const Login = () => {
     } catch (error) {
       setError("Invalid email or password");
       toast.error("Login failed!");
+    } finally {
+      setIsLoading(false);
     }
   };
+
 
   return (
     <div className="container mx-auto py-20 px-4">
@@ -89,10 +95,19 @@ const Login = () => {
         {error && <p className="text-red-500 mb-4">{error}</p>}
         <button
           type="submit"
-          className="bg-blue text-white py-2 px-4 w-full rounded hover:bg-light-blue transition duration-200"
+          className="bg-blue text-white py-2 px-4 w-full rounded hover:bg-light-blue transition duration-200 flex items-center justify-center"
+          disabled={isLoading}
         >
-          Login
+          {isLoading ? (
+            <svg className="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          ) : (
+            'Login'
+          )}
         </button>
+
         <p className="text-center mt-4">
           Don't have an account?{" "}
           <Link to="/register" className="text-blue-500 hover:underline">
