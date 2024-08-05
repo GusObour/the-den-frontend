@@ -18,27 +18,25 @@ const formatDateTime = (dateTime, format) => {
 };
 
 const Booking = () => {
-  const { auth } = useContext(AuthContext);
-  const navigate = useNavigate();
-  const [services, setServices] = useState([]);
-  const [barbers, setBarbers] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
-  const [selectedBarber, setSelectedBarber] = useState(null);
-  const [availableDates, setAvailableDates] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [timeSlots, setTimeSlots] = useState([]);
-  const [selectedTime, setSelectedTime] = useState(null);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [showBookingSuccess, setShowBookingSuccess] = useState(false);
-  const [appointmentData, setAppointmentData] = useState(null);
-
-  useEffect(() => {
-    const fetchServicesAndBarbers = async () => {
-      const fetchedServices = await BookingService.fetchServices();
-      setServices(fetchedServices);
-      const fetchedBarbers = await BookingService.fetchBarbers();
-      setBarbers(fetchedBarbers);
-    };
+    const { auth } = useContext(AuthContext);
+    const navigate = useNavigate();
+    const [services, setServices] = useState([]);
+    const [barbers, setBarbers] = useState([]);
+    const [selectedService, setSelectedService] = useState(null);
+    const [selectedBarber, setSelectedBarber] = useState(null);
+    const [availableDates, setAvailableDates] = useState([]);
+    const [selectedDate, setSelectedDate] = useState(null);
+    const [timeSlots, setTimeSlots] = useState([]);
+    const [selectedTime, setSelectedTime] = useState(null);
+    const [currentStep, setCurrentStep] = useState(1);
+    const [isBookingLoading, setIsBookingLoading] = useState(false);
+    useEffect(() => {
+        const fetchServicesAndBarbers = async () => {
+            const fetchedServices = await BookingService.fetchServices();
+            setServices(fetchedServices);
+            const fetchedBarbers = await BookingService.fetchBarbers();
+            setBarbers(fetchedBarbers);
+        };
 
     fetchServicesAndBarbers();
 
@@ -119,62 +117,66 @@ const Booking = () => {
     }
   };
 
-  const handleTimeSelect = (time) => {
-    setSelectedTime(time);
+    const handleTimeSelect = (time) => {
+        setSelectedTime(time);
 
-    if (selectedBarber && selectedDate && time) {
-      const appointmentData = {
-        barberId: selectedBarber.id,
-        date: selectedDate,
-        start: time.start,
-        end: time.end,
-        userId: auth.user._id,
-      };
+        if (selectedBarber && selectedDate && time) {
+            const appointmentData = {
+                barberId: selectedBarber.id,
+                date: selectedDate,
+                start: time.start,
+                end: time.end,
+                userId: auth.user._id
+            };
 
-      const socketStatus = BookingService.checkSocketStatus();
+            const socketStatus = BookingService.checkSocketStatus();
 
-      if (socketStatus === WebSocket.OPEN) {
-        BookingService.lockAppointment(appointmentData);
-      } else {
-        toast.error("WebSocket is not ready. Please try again in a moment.");
-        // Optionally, you can attempt to reconnect or provide a visual indicator to the user
-        BookingService.reconnectSocket();
-      }
-    } else {
-      toast.error("Please select a service, barber, date, and time.");
-    }
-  };
-  const handleBooking = async () => {
-    try {
-      const appointmentData = {
-        userId: auth.user._id,
-        barberId: selectedBarber.id,
-        serviceId: selectedService._id,
-        date: selectedDate,
-        start: selectedTime.start,
-        end: selectedTime.end,
-      };
+            if (socketStatus === WebSocket.OPEN) {
+                BookingService.lockAppointment(appointmentData);
+            } else {
+                toast.error('WebSocket is not ready. Please try again in a moment.');
+                // Optionally, you can attempt to reconnect or provide a visual indicator to the user
+                BookingService.reconnectSocket();
+            }
+        } else {
+            toast.error('Please select a service, barber, date, and time.');
+        }
+    };
+    const handleBooking = async () => {
+        setIsBookingLoading(true);
+        try {
+            const appointmentData = {
+                userId: auth.user._id,
+                barberId: selectedBarber.id,
+                serviceId: selectedService._id,
+                date: selectedDate,
+                start: selectedTime.start,
+                end: selectedTime.end
+            };
 
-      // by passing the google calendar auth for right now. going directly to the appointment creation
-      // const state = JSON.stringify(appointmentData);
-      // const authUrl = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
+            // by passing the google calendar auth for right now. going directly to the appointment creation
+            // const state = JSON.stringify(appointmentData);
+            // const authUrl = `${process.env.REACT_APP_API_BASE_URL}/google/auth?${new URLSearchParams({ state })}`;
 
-      const response = await BookingService.completeBooking(appointmentData);
-      if (response.success) {
-        toast.success(response.message);
-        setCurrentStep(1);
-        setSelectedService(null);
-        setSelectedBarber(null);
-        setSelectedDate(null);
-        setSelectedTime(null);
-      } else {
-        toast.error(`${response.message}`);
-      }
-    } catch (error) {
-      console.error("Error during booking:", error);
-      toast.error("Error during booking. Please try again.");
-    }
-  };
+            const response = await BookingService.completeBooking(appointmentData);
+            if (response.success) {
+                toast.success(response.message);
+                setCurrentStep(1);
+                setSelectedService(null);
+                setSelectedBarber(null);
+                setSelectedDate(null);
+                setSelectedTime(null);
+            } else {
+                toast.error(`${response.message}`);
+            }
+
+        } catch (error) {
+            console.error('Error during booking:', error);
+            toast.error('Error during booking. Please try again.');
+        } finally {
+            setIsBookingLoading(false);
+        }
+    };
 
   const handleNext = () => {
     setCurrentStep((prevStep) => prevStep + 1);
@@ -312,125 +314,95 @@ const Booking = () => {
             </div>
           )}
 
-          {currentStep === 4 && (
-            <div>
-              <h2 className="text-2xl font-bold mb-4 text-black dark:text-light-gray">
-                Choose a time
-              </h2>
-              <div className="grid grid-cols-3 gap-4">
-                {timeSlots.map((time) => (
-                  <div
-                    key={time.start}
-                    className="p-4 bg-white dark:bg-black-2 rounded-lg shadow-md cursor-pointer hover:bg-light-blue dark:hover:bg-blue"
-                  >
-                    <div
-                      className={`time-selection text-center ${
-                        selectedTime === time
-                          ? "bg-blue text-white"
-                          : "bg-white text-black dark:bg-dark-gray dark:text-light-gray"
-                      }`}
-                      onClick={() => handleTimeSelect(time)}
-                    >
-                      <div>
-                        {new Intl.DateTimeFormat("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          timeZone: "UTC",
-                        }).format(new Date(time.start))}{" "}
-                        to{" "}
-                        {new Intl.DateTimeFormat("en-US", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          timeZone: "UTC",
-                        }).format(new Date(time.end))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button
-                className="mt-4 bg-gray-500 text-white py-2 px-4 rounded-lg"
-                onClick={handleBack}
-              >
-                Back
-              </button>
+                    {currentStep === 4 && (
+                        <div>
+                            <h2 className="text-2xl font-bold mb-4 text-black dark:text-light-gray">Choose a time</h2>
+                            <div className='grid grid-cols-3 gap-4'>
+                                {timeSlots.map((time) => (
+                                    <div key={time.start} className="p-4 bg-white dark:bg-black-2 rounded-lg shadow-md cursor-pointer hover:bg-light-blue dark:hover:bg-blue">
+                                        <div
+                                            className={`time-selection text-center ${selectedTime === time ? 'bg-blue text-white' : 'bg-white text-black dark:bg-dark-gray dark:text-light-gray'}`}
+                                            onClick={() => handleTimeSelect(time)}
+                                        >
+                                            <div>
+                                                {new Intl.DateTimeFormat('en-US', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    timeZone: 'UTC',
+                                                }).format(new Date(time.start))}
+                                                {" "}to{" "}
+                                                {new Intl.DateTimeFormat('en-US', {
+                                                    hour: '2-digit',
+                                                    minute: '2-digit',
+                                                    timeZone: 'UTC',
+                                                }).format(new Date(time.end))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <button className="mt-4 bg-gray-500 text-white py-2 px-4 rounded-lg" onClick={handleBack}>Back</button>
+                        </div>
+                    )}
+                </div>
+                <div className="w-full md:w-1/3 bg-white dark:bg-black-2 p-2 md:p-4 rounded-lg shadow-md mt-2 md:mt-4 md:ml-4 max-h-96 overflow-y-auto">
+                    <h2 className="text-xl font-bold mb-4 text-black dark:text-light-gray">Your order</h2>
+                    <p className="text-dark-gray dark:text-uranian-blue">The Den LLC</p>
+                    {selectedService && (
+                        <div className="flex items-center mt-2">
+                            <div>
+                                <p className="font-semibold text-black dark:text-light-gray">Service Details:</p>
+                                <p className="text-dark-gray dark:text-uranian-blue">{selectedService.name}</p>
+                                <p className="text-dark-gray dark:text-uranian-blue">{selectedService.duration} mins</p>
+                                <p className="text-dark-gray dark:text-uranian-blue">${selectedService.price}</p>
+                            </div>
+                        </div>
+                    )}
+                    {selectedBarber && (
+                        <div className="flex items-center mt-2">
+                            <div>
+                                <p className="font-semibold text-black dark:text-light-gray">Barber Details:</p>
+                                <p className="text-dark-gray dark:text-uranian-blue">{selectedBarber.fullName}</p>
+                                <p className="text-dark-gray dark:text-uranian-blue">{selectedBarber.email}</p>
+                            </div>
+                        </div>
+                    )}
+                    {selectedDate && <p className="mt-2 text-black dark:text-light-gray">Date: {selectedDate}</p>}
+                    {selectedTime && (
+                        <p className="mt-2 text-black dark:text-light-gray">
+                            Time: {new Intl.DateTimeFormat('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'UTC',
+                            }).format(new Date(selectedTime.start))} {" "}to{" "}
+                            {new Intl.DateTimeFormat('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                timeZone: 'UTC',
+                            }).format(new Date(selectedTime.end))}
+                        </p>
+                    )}
+                    {selectedService && selectedBarber && selectedDate && selectedTime && (
+                        <button
+                            className="mt-4 bg-black text-white py-2 px-4 rounded-lg w-full flex items-center justify-center"
+                            onClick={handleBooking}
+                            disabled={isBookingLoading}
+                        >
+                            {isBookingLoading ? (
+                                <svg className="animate-spin h-5 w-5 mr-3 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                                </svg>
+                            ) : (
+                                'Book Appointment'
+                            )}
+                        </button>
+                    )}
+
+                </div>
             </div>
-          )}
         </div>
-        <div className="w-full md:w-1/3 bg-white dark:bg-black-2 p-2 md:p-4 rounded-lg shadow-md mt-2 md:mt-4 md:ml-4 max-h-96 overflow-y-auto">
-          <h2 className="text-xl font-bold mb-4 text-black dark:text-light-gray">
-            Your order
-          </h2>
-          <p className="text-dark-gray dark:text-uranian-blue">The Den LLC</p>
-          {selectedService && (
-            <div className="flex items-center mt-2">
-              <div>
-                <p className="font-semibold text-black dark:text-light-gray">
-                  Service Details:
-                </p>
-                <p className="text-dark-gray dark:text-uranian-blue">
-                  {selectedService.name}
-                </p>
-                <p className="text-dark-gray dark:text-uranian-blue">
-                  {selectedService.duration} mins
-                </p>
-                <p className="text-dark-gray dark:text-uranian-blue">
-                  ${selectedService.price}
-                </p>
-              </div>
-            </div>
-          )}
-          {selectedBarber && (
-            <div className="flex items-center mt-2">
-              <div>
-                <p className="font-semibold text-black dark:text-light-gray">
-                  Barber Details:
-                </p>
-                <p className="text-dark-gray dark:text-uranian-blue">
-                  {selectedBarber.fullName}
-                </p>
-                <p className="text-dark-gray dark:text-uranian-blue">
-                  {selectedBarber.email}
-                </p>
-              </div>
-            </div>
-          )}
-          {selectedDate && (
-            <p className="mt-2 text-black dark:text-light-gray">
-              Date: {selectedDate}
-            </p>
-          )}
-          {selectedTime && (
-            <p className="mt-2 text-black dark:text-light-gray">
-              Time:{" "}
-              {new Intl.DateTimeFormat("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZone: "UTC",
-              }).format(new Date(selectedTime.start))}{" "}
-              to{" "}
-              {new Intl.DateTimeFormat("en-US", {
-                hour: "2-digit",
-                minute: "2-digit",
-                timeZone: "UTC",
-              }).format(new Date(selectedTime.end))}
-            </p>
-          )}
-          {selectedService &&
-            selectedBarber &&
-            selectedDate &&
-            selectedTime && (
-              <button
-                className="mt-4 bg-black text-white py-2 px-4 rounded-lg w-full"
-                onClick={handleBooking}
-              >
-                Book Appointment
-              </button>
-            )}
-        </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Booking;
